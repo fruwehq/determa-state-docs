@@ -1,0 +1,97 @@
+name: Validate and publish
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    steps:
+      - name: Check out tutorial
+        uses: actions/checkout@v5
+
+      - name: Check out specification
+        uses: actions/checkout@v5
+        with:
+          repository: fruwehq/determa-state-spec
+          ref: 09c717a40c75b99612e54d764b5f1bdfa4b94f96
+          path: .sources/determa-state-spec
+
+      - name: Check out conformance
+        uses: actions/checkout@v5
+        with:
+          repository: fruwehq/determa-state-conformance
+          ref: 74e477087fd31561600aacf652cccae571a5ea9a
+          path: .sources/determa-state-conformance
+
+      - name: Check out Python engine
+        uses: actions/checkout@v5
+        with:
+          repository: fruwehq/determa-state-python
+          ref: 4958ac8dd514bce43d3e7ed70dbbbb7164fc713b
+          path: .sources/determa-state-python
+
+      - name: Check out Rust engine
+        uses: actions/checkout@v5
+        with:
+          repository: fruwehq/determa-state-rust
+          ref: c026dc0d6bd82138c1e5042d90252f78a7dea6bf
+          path: .sources/determa-state-rust
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.95.0
+
+      - name: Install pinned dependencies
+        run: python -m pip install --requirement requirements.txt
+
+      - name: Validate released version is current
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/check_latest.py
+
+      - name: Validate tutorials and build site
+        run: make check
+
+      - name: Configure GitHub Pages
+        if: github.event_name == 'push'
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
