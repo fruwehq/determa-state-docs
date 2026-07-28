@@ -59,6 +59,33 @@ COMPONENTS_AND_SPAWNING_CASES = {
     "87-internal-env-target-mode",
     "91-component-host-input-rejection",
 }
+INVALID_BUNDLES = {
+    "cel-host-extension.yaml": "cel_profile_error",
+    "cel-type-mismatch.yaml": "semantic_validation",
+    "cel-lifecycle-event.yaml": "semantic_validation",
+}
+CEL_AND_ACTIONS_SPECIFICATION = {
+    "4.8",
+    "5",
+    "5.1",
+    "5.2",
+    "5.2.portable-cel-profile",
+    "5.3",
+}
+CEL_AND_ACTIONS_CASES = {
+    "12-guarded-list",
+    "17-action-fault",
+    "61-expression-map-order",
+    "64-dynamic-target-expression-order",
+    "65-portable-cel-profile",
+    "66-cel-profile-rejections",
+    "68-cel-and-nonabsorbed-error",
+    "69-cel-or-nonabsorbed-error",
+    "70-dynamic-target-list-order",
+    "71-cel-reversed-and-nonabsorbed-error",
+    "72-cel-reversed-or-nonabsorbed-error",
+    "79-missing-refresh-field",
+}
 
 
 def yaml_loader() -> YAML:
@@ -301,6 +328,61 @@ def check_components_and_spawning_coverage(coverage: dict[str, object]) -> None:
     )
 
 
+def check_cel_and_actions_coverage(coverage: dict[str, object]) -> None:
+    chapter_path = "docs/guides/cel-and-actions.md"
+    specification = {
+        require_map(entry, "specification coverage entry")["id"]: require_map(
+            entry, "specification coverage entry"
+        )
+        for entry in require_list(
+            coverage.get("specification"), "specification coverage"
+        )
+    }
+    conformance = {
+        require_map(entry, "conformance coverage entry")["case"]: require_map(
+            entry, "conformance coverage entry"
+        )
+        for entry in require_list(coverage.get("conformance"), "conformance coverage")
+    }
+    mapped_specification = {
+        identifier
+        for identifier, record in specification.items()
+        if record.get("status") == "covered"
+        and record.get("chapter") == chapter_path
+    }
+    if mapped_specification != CEL_AND_ACTIONS_SPECIFICATION:
+        raise ValueError(
+            "CEL/actions specification mapping mismatch; "
+            f"expected={sorted(CEL_AND_ACTIONS_SPECIFICATION)}, "
+            f"actual={sorted(mapped_specification)}"
+        )
+    mapped_cases = {
+        case
+        for case, record in conformance.items()
+        if record.get("status") == "covered"
+        and record.get("chapter") == chapter_path
+    }
+    if mapped_cases != CEL_AND_ACTIONS_CASES:
+        raise ValueError(
+            "CEL/actions conformance mapping mismatch; "
+            f"expected={sorted(CEL_AND_ACTIONS_CASES)}, "
+            f"actual={sorted(mapped_cases)}"
+        )
+    chapter = (ROOT / chapter_path).read_text()
+    for case in CEL_AND_ACTIONS_CASES:
+        link = (
+            "https://github.com/fruwehq/determa-state-conformance/"
+            f"tree/v0.0.7/conformance/core/{case}"
+        )
+        if f"]({link})" not in chapter:
+            raise ValueError(f"CEL/actions chapter does not link conformance {case}")
+    print(
+        "CEL/actions coverage: "
+        f"{len(CEL_AND_ACTIONS_SPECIFICATION)} spec sections, "
+        f"{len(CEL_AND_ACTIONS_CASES)} core cases"
+    )
+
+
 def safe_example_path(raw: str) -> PurePosixPath:
     path = PurePosixPath(raw)
     if path.is_absolute() or not path.parts or ".." in path.parts:
@@ -352,17 +434,37 @@ def check_bundles(extracted: Iterable[Path], schema_path: Path) -> None:
     schema = json.loads(schema_path.read_text())
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
-    count = 0
+    valid_count = 0
+    invalid_count = 0
     for path in extracted:
         if path.suffix not in {".yaml", ".yml"}:
             continue
         document = load_yaml(path)
         validator.validate(document)
-        determa_state.load_bundle(path.read_text())
-        count += 1
-    if count == 0:
+        expected_error = (
+            INVALID_BUNDLES.get(path.name) if path.parent.name == "invalid" else None
+        )
+        if expected_error is None:
+            determa_state.load_bundle(path.read_text())
+            valid_count += 1
+            continue
+        try:
+            determa_state.load_bundle(path.read_text())
+        except determa_state.ValidationError as error:
+            if error.code != expected_error:
+                raise ValueError(
+                    f"{path.name} rejected with {error.code}, expected {expected_error}"
+                ) from error
+        else:
+            raise ValueError(f"{path.name} unexpectedly passed semantic validation")
+        invalid_count += 1
+    if valid_count == 0:
         raise ValueError("no extracted machine bundles found")
-    print(f"bundles: {count} YAML 1.2 and schema-valid")
+    print(
+        "bundles: "
+        f"{valid_count} valid and {invalid_count} expected semantic rejections; "
+        "all YAML 1.2 and schema-valid"
+    )
 
 
 def run_traces(destination: Path) -> None:
@@ -424,6 +526,41 @@ def run_traces(destination: Path) -> None:
         )
     print("traces: Python and Rust agree for first machine and components/spawning")
 
+    cel_paths = [
+        destination / "machines" / "guard-order.yaml",
+        destination / "machines" / "cel-actions.yaml",
+        destination / "machines" / "cel-faults.yaml",
+        destination / "invalid" / "cel-host-extension.yaml",
+        destination / "invalid" / "cel-type-mismatch.yaml",
+        destination / "invalid" / "cel-lifecycle-event.yaml",
+    ]
+    cel_python = destination / "python" / "cel_actions.py"
+    cel_rust_manifest = destination / "rust" / "cel-actions" / "Cargo.toml"
+    cel_python_output = run(
+        sys.executable,
+        str(cel_python),
+        *(str(path) for path in cel_paths),
+    )
+    cel_rust_output = run(
+        "cargo",
+        "run",
+        "--quiet",
+        "--manifest-path",
+        str(cel_rust_manifest),
+        "--",
+        *(str(path) for path in cel_paths),
+    )
+    cel_expected = (
+        "guards=standard,bulk,empty; total=4.5; "
+        "audit=audit:priority:vip:4.5; faults=11"
+    )
+    if cel_python_output != cel_expected or cel_rust_output != cel_expected:
+        raise ValueError(
+            "CEL trace mismatch: "
+            f"python={cel_python_output!r}, rust={cel_rust_output!r}"
+        )
+    print("traces: Python and Rust agree on first-machine and CEL/action traces")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -443,6 +580,7 @@ def main() -> None:
     coverage, paths = check_versions(args.source_root)
     check_coverage(coverage, paths["specification"], paths["conformance"])
     check_components_and_spawning_coverage(coverage)
+    check_cel_and_actions_coverage(coverage)
     with tempfile.TemporaryDirectory(prefix="determa-examples-") as temporary:
         destination = Path(temporary)
         extracted = extract_examples(destination)
