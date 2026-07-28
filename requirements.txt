@@ -1,0 +1,6 @@
+determa-state==0.0.7
+jsonschema==4.26.0
+markdown-it-py==4.2.0
+mkdocs==1.6.1
+mkdocs-material==9.7.7
+ruamel.yaml==0.19.1

@@ -1,0 +1,257 @@
+state_version: "0.0.7"
+
+specification:
+  - id: "0"
+    status: non_user_facing
+    reason: Normative reference inventory and semantic-independence rules are specification maintenance material.
+  - id: "1"
+    status: covered
+    chapter: docs/index.md
+  - id: "2"
+    status: planned
+    chapter: docs/guides/core-statecharts.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/3
+  - id: "3"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "4"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "4.1"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "4.2"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "4.3"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "4.4"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "4.5"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "4.6"
+    status: planned
+    chapter: docs/guides/core-statecharts.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/3
+  - id: "4.7"
+    status: planned
+    chapter: docs/guides/core-statecharts.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/3
+  - id: "4.8"
+    status: planned
+    chapter: docs/guides/cel-and-actions.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/4
+  - id: "5"
+    status: planned
+    chapter: docs/guides/cel-and-actions.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/4
+  - id: "5.1"
+    status: planned
+    chapter: docs/guides/cel-and-actions.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/4
+  - id: "5.2"
+    status: planned
+    chapter: docs/guides/cel-and-actions.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/4
+  - id: "5.2.portable-cel-profile"
+    status: planned
+    chapter: docs/guides/cel-and-actions.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/4
+  - id: "5.3"
+    status: planned
+    chapter: docs/guides/cel-and-actions.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/4
+  - id: "6"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "6.1"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "6.2"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "6.3"
+    status: planned
+    chapter: docs/guides/core-statecharts.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/3
+  - id: "6.4"
+    status: planned
+    chapter: docs/guides/core-statecharts.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/3
+  - id: "6.5"
+    status: planned
+    chapter: docs/guides/core-statecharts.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/3
+  - id: "6.6"
+    status: planned
+    chapter: docs/guides/core-statecharts.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/3
+  - id: "7"
+    status: planned
+    chapter: docs/guides/components-and-spawning.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/5
+  - id: "7.1"
+    status: planned
+    chapter: docs/guides/components-and-spawning.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/5
+  - id: "7.2"
+    status: planned
+    chapter: docs/guides/components-and-spawning.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/5
+  - id: "7.3"
+    status: planned
+    chapter: docs/guides/components-and-spawning.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/5
+  - id: "8"
+    status: covered
+    chapter: docs/getting-started/first-machine.md
+  - id: "9"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "10"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "10.1"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "10.2"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "10.3"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "10.4"
+    status: non_user_facing
+    reason: Dead-letter ownership is deliberately outside the portable core and has no portable tutorial API.
+  - id: "11"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "11.1"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "11.2"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "11.3"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "11.4"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "12"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "13"
+    status: planned
+    chapter: docs/guides/effects-faults-hosting.md
+    issue: https://github.com/fruwehq/determa-state-examples/issues/6
+  - id: "14"
+    status: non_user_facing
+    reason: The conformance delivery plan is repository governance rather than a machine-authoring feature.
+  - id: "15"
+    status: non_user_facing
+    reason: This repository implements the future-example plan; the section is not runtime behavior.
+
+conformance:
+  - { case: 01-guarded-leaf, status: covered, chapter: docs/getting-started/first-machine.md }
+  - { case: 02-hierarchy-bubbling, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 03-initial-action, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 05-variable-scope, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 06-payload-typing, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 07-internal-external, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 08-local-vs-external, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 09-parallel-components, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 10-history-deep, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 11-history-shallow, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 12-guarded-list, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 13-spawn-completion, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 14-explicit-targets, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 15-external-env-refresh, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 16-timer-extension, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 17-action-fault, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 18-domain-failure, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 19-public-event-contract, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 20-invalid-public-correlation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 23-choice, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 24-choice-chain, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 25-choice-invalid, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 26-unreachable, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 27-dead-branch, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 28-reachable-ok, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 29-owned-spawn, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 30-owned-spawn-cancel, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 32-history-resume-restart, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 33-history-capture-timing, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 34-history-first-entry, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 35-shallow-deep-history, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 36-history-variable-reinitialization, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 37-destroyed-variable-write, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 38-destroyed-reference-binding, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 39-ancestor-internal-transition, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 40-noncanonical-transitions, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 42-initial-history-rejection, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 43-self-history-lifecycle, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 44-local-history, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 45-proper-ancestor-target, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 46-root-boundary-validation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 47-scoped-owned-child-lifetime, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 48-null-cancel, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 49-exit-action-cancel, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 50-root-fault-terminal-aggregate, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 51-component-initialization-fault, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 52-spawned-initialization-fault, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 53-compound-choice-lifecycle, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 54-stale-component-target, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 55-root-owner-target, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 56-variable-initialization, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 57-creation-binding-defaults, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 58-missing-creation-binding, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 59-payload-default-materialization, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 60-payload-default-validation, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 61-expression-map-order, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 62-parsed-value-model, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 63-entry-stop-interruption, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 64-dynamic-target-expression-order, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 65-portable-cel-profile, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 66-cel-profile-rejections, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 67-bundle-state-binding, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 68-cel-and-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 69-cel-or-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 70-dynamic-target-list-order, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 71-cel-reversed-and-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 72-cel-reversed-or-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 73-synchronous-initialization-cycle, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 74-sibling-cleanup-order, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 75-root-initialization-fault, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 76-invalid-create-unicode, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 77-invalid-dispatch-unicode, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 78-component-external-refresh, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 79-missing-refresh-field, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 80-unbound-owned-child, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 81-holder-reference-reuse, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 82-instance-reference-target-identity, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 83-contained-dynamic-instance-send, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 84-choice-stop-chain, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
+  - { case: 85-initialization-emission-rollback, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 86-initial-component-completion-order, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 87-internal-env-target-mode, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 88-reserved-payload-validation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 89-nonfinite-creation-binding, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 90-host-numeric-normalization, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 91-component-host-input-rejection, status: planned, chapter: docs/guides/components-and-spawning.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/5" }
+  - { case: 92-faulted-root-component-precedence, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 93-optional-correlation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
