@@ -59,6 +59,11 @@ COMPONENTS_AND_SPAWNING_CASES = {
     "87-internal-env-target-mode",
     "91-component-host-input-rejection",
 }
+INVALID_BUNDLES = {
+    "cel-host-extension.yaml": "cel_profile_error",
+    "cel-type-mismatch.yaml": "semantic_validation",
+    "cel-lifecycle-event.yaml": "semantic_validation",
+}
 
 
 def yaml_loader() -> YAML:
@@ -352,17 +357,37 @@ def check_bundles(extracted: Iterable[Path], schema_path: Path) -> None:
     schema = json.loads(schema_path.read_text())
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
-    count = 0
+    valid_count = 0
+    invalid_count = 0
     for path in extracted:
         if path.suffix not in {".yaml", ".yml"}:
             continue
         document = load_yaml(path)
         validator.validate(document)
-        determa_state.load_bundle(path.read_text())
-        count += 1
-    if count == 0:
+        expected_error = (
+            INVALID_BUNDLES.get(path.name) if path.parent.name == "invalid" else None
+        )
+        if expected_error is None:
+            determa_state.load_bundle(path.read_text())
+            valid_count += 1
+            continue
+        try:
+            determa_state.load_bundle(path.read_text())
+        except determa_state.ValidationError as error:
+            if error.code != expected_error:
+                raise ValueError(
+                    f"{path.name} rejected with {error.code}, expected {expected_error}"
+                ) from error
+        else:
+            raise ValueError(f"{path.name} unexpectedly passed semantic validation")
+        invalid_count += 1
+    if valid_count == 0:
         raise ValueError("no extracted machine bundles found")
-    print(f"bundles: {count} YAML 1.2 and schema-valid")
+    print(
+        "bundles: "
+        f"{valid_count} valid and {invalid_count} expected semantic rejections; "
+        "all YAML 1.2 and schema-valid"
+    )
 
 
 def run_traces(destination: Path) -> None:
@@ -423,6 +448,41 @@ def run_traces(destination: Path) -> None:
             f"python={components_python_output!r}, rust={components_rust_output!r}"
         )
     print("traces: Python and Rust agree for first machine and components/spawning")
+
+    cel_paths = [
+        destination / "machines" / "guard-order.yaml",
+        destination / "machines" / "cel-actions.yaml",
+        destination / "machines" / "cel-faults.yaml",
+        destination / "invalid" / "cel-host-extension.yaml",
+        destination / "invalid" / "cel-type-mismatch.yaml",
+        destination / "invalid" / "cel-lifecycle-event.yaml",
+    ]
+    cel_python = destination / "python" / "cel_actions.py"
+    cel_rust_manifest = destination / "rust" / "cel-actions" / "Cargo.toml"
+    cel_python_output = run(
+        sys.executable,
+        str(cel_python),
+        *(str(path) for path in cel_paths),
+    )
+    cel_rust_output = run(
+        "cargo",
+        "run",
+        "--quiet",
+        "--manifest-path",
+        str(cel_rust_manifest),
+        "--",
+        *(str(path) for path in cel_paths),
+    )
+    cel_expected = (
+        "guards=standard,bulk,empty; total=4.5; "
+        "audit=audit:priority:vip:4.5; faults=11"
+    )
+    if cel_python_output != cel_expected or cel_rust_output != cel_expected:
+        raise ValueError(
+            "CEL trace mismatch: "
+            f"python={cel_python_output!r}, rust={cel_rust_output!r}"
+        )
+    print("traces: Python and Rust agree on first-machine and CEL/action traces")
 
 
 def main() -> None:

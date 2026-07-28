@@ -41,29 +41,23 @@ specification:
     chapter: docs/guides/core-statecharts.md
     issue: https://github.com/fruwehq/determa-state-examples/issues/3
   - id: "4.8"
-    status: planned
+    status: covered
     chapter: docs/guides/cel-and-actions.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/4
   - id: "5"
-    status: planned
+    status: covered
     chapter: docs/guides/cel-and-actions.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/4
   - id: "5.1"
-    status: planned
+    status: covered
     chapter: docs/guides/cel-and-actions.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/4
   - id: "5.2"
-    status: planned
+    status: covered
     chapter: docs/guides/cel-and-actions.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/4
   - id: "5.2.portable-cel-profile"
-    status: planned
+    status: covered
     chapter: docs/guides/cel-and-actions.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/4
   - id: "5.3"
-    status: planned
+    status: covered
     chapter: docs/guides/cel-and-actions.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/4
   - id: "6"
     status: covered
     chapter: docs/getting-started/first-machine.md
@@ -173,12 +167,12 @@ conformance:
   - { case: 09-parallel-components, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 10-history-deep, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
   - { case: 11-history-shallow, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
-  - { case: 12-guarded-list, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 12-guarded-list, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 13-spawn-completion, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 14-explicit-targets, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 15-external-env-refresh, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
   - { case: 16-timer-extension, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 17-action-fault, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 17-action-fault, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 18-domain-failure, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
   - { case: 19-public-event-contract, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
   - { case: 20-invalid-public-correlation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
@@ -218,25 +212,25 @@ conformance:
   - { case: 58-missing-creation-binding, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
   - { case: 59-payload-default-materialization, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
   - { case: 60-payload-default-validation, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
-  - { case: 61-expression-map-order, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 61-expression-map-order, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 62-parsed-value-model, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
   - { case: 63-entry-stop-interruption, status: planned, chapter: docs/guides/core-statecharts.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/3" }
-  - { case: 64-dynamic-target-expression-order, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
-  - { case: 65-portable-cel-profile, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
-  - { case: 66-cel-profile-rejections, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 64-dynamic-target-expression-order, status: covered, chapter: docs/guides/cel-and-actions.md }
+  - { case: 65-portable-cel-profile, status: covered, chapter: docs/guides/cel-and-actions.md }
+  - { case: 66-cel-profile-rejections, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 67-bundle-state-binding, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 68-cel-and-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
-  - { case: 69-cel-or-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
-  - { case: 70-dynamic-target-list-order, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
-  - { case: 71-cel-reversed-and-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
-  - { case: 72-cel-reversed-or-nonabsorbed-error, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 68-cel-and-nonabsorbed-error, status: covered, chapter: docs/guides/cel-and-actions.md }
+  - { case: 69-cel-or-nonabsorbed-error, status: covered, chapter: docs/guides/cel-and-actions.md }
+  - { case: 70-dynamic-target-list-order, status: covered, chapter: docs/guides/cel-and-actions.md }
+  - { case: 71-cel-reversed-and-nonabsorbed-error, status: covered, chapter: docs/guides/cel-and-actions.md }
+  - { case: 72-cel-reversed-or-nonabsorbed-error, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 73-synchronous-initialization-cycle, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 74-sibling-cleanup-order, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 75-root-initialization-fault, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
   - { case: 76-invalid-create-unicode, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
   - { case: 77-invalid-dispatch-unicode, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
   - { case: 78-component-external-refresh, status: covered, chapter: docs/guides/components-and-spawning.md }
-  - { case: 79-missing-refresh-field, status: planned, chapter: docs/guides/cel-and-actions.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/4" }
+  - { case: 79-missing-refresh-field, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 80-unbound-owned-child, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 81-holder-reference-reuse, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 82-instance-reference-target-identity, status: covered, chapter: docs/guides/components-and-spawning.md }
