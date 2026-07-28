@@ -17,11 +17,15 @@ This tutorial targets **Determa State 0.0.7** and numeric **`format: 1`**.
 
 You do not need to understand the full specification first.
 
-Continue with [CEL and structured actions](guides/cel-and-actions.md) to learn the
+Continue with [core statecharts](guides/core-statecharts.md) for nested states,
+hierarchical dispatch, transition boundaries, choices, history, typed creation data,
+external values, portable YAML parsing, and stop behavior.
+
+Then study [CEL and structured actions](guides/cel-and-actions.md) to learn the
 complete portable expression profile, ordered guards, every structured action shape,
 and atomic fault rollback through matching Python and Rust traces.
 
-Continue with [components and owned instances](guides/components-and-spawning.md) when
+Use [components and owned instances](guides/components-and-spawning.md) when
 one machine must coordinate isolated reusable or dynamically created runtimes.
 
 ## What is portable?

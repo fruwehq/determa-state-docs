@@ -468,25 +468,38 @@ def check_bundles(extracted: Iterable[Path], schema_path: Path) -> None:
 
 
 def run_traces(destination: Path) -> None:
-    machine = destination / "machines" / "first-counter.yaml"
-    python_example = destination / "python" / "first_counter.py"
-    rust_manifest = destination / "rust" / "first-counter" / "Cargo.toml"
-
-    python_output = run(sys.executable, str(python_example), str(machine))
-    rust_output = run(
-        "cargo",
-        "run",
-        "--quiet",
-        "--manifest-path",
-        str(rust_manifest),
-        "--",
-        str(machine),
-    )
-    expected = "count=3; next increment was unhandled"
-    if python_output != expected or rust_output != expected:
-        raise ValueError(
-            f"trace mismatch: python={python_output!r}, rust={rust_output!r}"
+    traces = [
+        (
+            destination / "python" / "first_counter.py",
+            destination / "rust" / "first-counter" / "Cargo.toml",
+            destination / "machines" / "first-counter.yaml",
+            "count=3; next increment was unhandled",
+        ),
+        (
+            destination / "python" / "core_statecharts.py",
+            destination / "rust" / "core-statecharts" / "Cargo.toml",
+            destination,
+            (
+                "order=work.review; history=deep_second; "
+                "yaml=no; stop=completed"
+            ),
+        ),
+    ]
+    for python_example, rust_manifest, argument, expected in traces:
+        python_output = run(sys.executable, str(python_example), str(argument))
+        rust_output = run(
+            "cargo",
+            "run",
+            "--quiet",
+            "--manifest-path",
+            str(rust_manifest),
+            "--",
+            str(argument),
         )
+        if python_output != expected or rust_output != expected:
+            raise ValueError(
+                f"trace mismatch: python={python_output!r}, rust={rust_output!r}"
+            )
 
     components_machine = destination / "machines" / "order-components.yaml"
     owned_machine = destination / "machines" / "owned-workers.yaml"
@@ -524,7 +537,10 @@ def run_traces(destination: Path) -> None:
             "components trace mismatch: "
             f"python={components_python_output!r}, rust={components_rust_output!r}"
         )
-    print("traces: Python and Rust agree for first machine and components/spawning")
+    print(
+        "traces: Python and Rust agree for first machine, core statecharts, "
+        "and components/spawning"
+    )
 
     cel_paths = [
         destination / "machines" / "guard-order.yaml",

@@ -16,10 +16,10 @@ Each entry is:
 Repository validation compares the matrix with the pinned specification headings and
 conformance case directories. Missing, stale, or duplicate entries fail the build.
 
-The current tutorial covers the first foreground machine, the complete portable CEL
-and structured-action surface, and
+The current tutorial covers the first guarded foreground machine,
+[core statechart structure and control flow](../guides/core-statecharts.md), the
+complete portable CEL and structured-action surface, and
 [components and owned instances](../guides/components-and-spawning.md). Issues
-[#3](https://github.com/fruwehq/determa-state-examples/issues/3),
 [#6](https://github.com/fruwehq/determa-state-examples/issues/6), and
 [#7](https://github.com/fruwehq/determa-state-examples/issues/7) track the remaining
 chapters.
