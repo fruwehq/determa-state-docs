@@ -92,56 +92,44 @@ specification:
     status: covered
     chapter: docs/getting-started/first-machine.md
   - id: "9"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "10"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "10.1"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "10.2"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "10.3"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "10.4"
     status: non_user_facing
     reason: Dead-letter ownership is deliberately outside the portable core and has no portable tutorial API.
   - id: "11"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "11.1"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "11.2"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "11.3"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "11.4"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "12"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "13"
-    status: planned
+    status: covered
     chapter: docs/guides/effects-faults-hosting.md
-    issue: https://github.com/fruwehq/determa-state-examples/issues/6
   - id: "14"
     status: non_user_facing
     reason: The conformance delivery plan is repository governance rather than a machine-authoring feature.
@@ -164,11 +152,11 @@ conformance:
   - { case: 13-spawn-completion, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 14-explicit-targets, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 15-external-env-refresh, status: covered, chapter: docs/guides/core-statecharts.md }
-  - { case: 16-timer-extension, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 16-timer-extension, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 17-action-fault, status: covered, chapter: docs/guides/cel-and-actions.md }
-  - { case: 18-domain-failure, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 19-public-event-contract, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 20-invalid-public-correlation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 18-domain-failure, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 19-public-event-contract, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 20-invalid-public-correlation, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 23-choice, status: covered, chapter: docs/guides/core-statecharts.md }
   - { case: 24-choice-chain, status: covered, chapter: docs/guides/core-statecharts.md }
   - { case: 25-choice-invalid, status: covered, chapter: docs/guides/core-statecharts.md }
@@ -190,11 +178,11 @@ conformance:
   - { case: 43-self-history-lifecycle, status: covered, chapter: docs/guides/core-statecharts.md }
   - { case: 44-local-history, status: covered, chapter: docs/guides/core-statecharts.md }
   - { case: 45-proper-ancestor-target, status: covered, chapter: docs/guides/core-statecharts.md }
-  - { case: 46-root-boundary-validation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 46-root-boundary-validation, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 47-scoped-owned-child-lifetime, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 48-null-cancel, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 49-exit-action-cancel, status: covered, chapter: docs/guides/components-and-spawning.md }
-  - { case: 50-root-fault-terminal-aggregate, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 50-root-fault-terminal-aggregate, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 51-component-initialization-fault, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 52-spawned-initialization-fault, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 53-compound-choice-lifecycle, status: covered, chapter: docs/guides/core-statecharts.md }
@@ -211,7 +199,7 @@ conformance:
   - { case: 64-dynamic-target-expression-order, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 65-portable-cel-profile, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 66-cel-profile-rejections, status: covered, chapter: docs/guides/cel-and-actions.md }
-  - { case: 67-bundle-state-binding, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 67-bundle-state-binding, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 68-cel-and-nonabsorbed-error, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 69-cel-or-nonabsorbed-error, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 70-dynamic-target-list-order, status: covered, chapter: docs/guides/cel-and-actions.md }
@@ -219,9 +207,9 @@ conformance:
   - { case: 72-cel-reversed-or-nonabsorbed-error, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 73-synchronous-initialization-cycle, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 74-sibling-cleanup-order, status: covered, chapter: docs/guides/components-and-spawning.md }
-  - { case: 75-root-initialization-fault, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 76-invalid-create-unicode, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 77-invalid-dispatch-unicode, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 75-root-initialization-fault, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 76-invalid-create-unicode, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 77-invalid-dispatch-unicode, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 78-component-external-refresh, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 79-missing-refresh-field, status: covered, chapter: docs/guides/cel-and-actions.md }
   - { case: 80-unbound-owned-child, status: covered, chapter: docs/guides/components-and-spawning.md }
@@ -229,12 +217,12 @@ conformance:
   - { case: 82-instance-reference-target-identity, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 83-contained-dynamic-instance-send, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 84-choice-stop-chain, status: covered, chapter: docs/guides/core-statecharts.md }
-  - { case: 85-initialization-emission-rollback, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 85-initialization-emission-rollback, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 86-initial-component-completion-order, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 87-internal-env-target-mode, status: covered, chapter: docs/guides/components-and-spawning.md }
-  - { case: 88-reserved-payload-validation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 89-nonfinite-creation-binding, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 90-host-numeric-normalization, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 88-reserved-payload-validation, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 89-nonfinite-creation-binding, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 90-host-numeric-normalization, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 91-component-host-input-rejection, status: covered, chapter: docs/guides/components-and-spawning.md }
-  - { case: 92-faulted-root-component-precedence, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
-  - { case: 93-optional-correlation, status: planned, chapter: docs/guides/effects-faults-hosting.md, issue: "https://github.com/fruwehq/determa-state-examples/issues/6" }
+  - { case: 92-faulted-root-component-precedence, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 93-optional-correlation, status: covered, chapter: docs/guides/effects-faults-hosting.md }
