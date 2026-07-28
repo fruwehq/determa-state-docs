@@ -19,31 +19,31 @@ jobs:
       pages: read
     steps:
       - name: Check out tutorial
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Check out specification
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-spec
           ref: 09c717a40c75b99612e54d764b5f1bdfa4b94f96
           path: .sources/determa-state-spec
 
       - name: Check out conformance
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-conformance
           ref: 74e477087fd31561600aacf652cccae571a5ea9a
           path: .sources/determa-state-conformance
 
       - name: Check out Python engine
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-python
           ref: 4958ac8dd514bce43d3e7ed70dbbbb7164fc713b
           path: .sources/determa-state-python
 
       - name: Check out Rust engine
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-rust
           ref: c026dc0d6bd82138c1e5042d90252f78a7dea6bf
