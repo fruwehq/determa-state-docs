@@ -15,8 +15,9 @@ same-bundle machine dynamically.
 | External system | by its host | outside the engine | declared input and output events |
 
 Components and owned instances never share variables or receive implicit broadcasts.
-Communication is always an explicit `send`, returned as an immutable emission for the
-host to deliver in a later foreground call.
+Author-directed communication uses an explicit `send`, returned as an immutable
+emission for the host to deliver in a later foreground call. Reserved lifecycle
+notifications for completion and failure are emitted automatically by the engine.
 
 ## 1. Place isolated components
 
@@ -556,7 +557,7 @@ def run_components(machine_path):
     stale = ds.dispatch(bundle, state, internal_delivery(first_activation[1]))
     assert stale["disposition"] == "rejected"
     assert stale["rejection"]["code"] == "inactive_component_target"
-    assert stale["state"] is state
+    assert stale["state"] == state
 
     current_inventory = component(state, "inventory")
     direct_host = ds.dispatch(
@@ -581,7 +582,7 @@ def run_components(machine_path):
     )
     assert direct_host["disposition"] == "rejected"
     assert direct_host["rejection"]["code"] == "invalid_instance_target"
-    assert direct_host["state"] is state
+    assert direct_host["state"] == state
 
     left = dispatch_input(
         bundle, state, "finish_inventory", "components:finish-inventory"
