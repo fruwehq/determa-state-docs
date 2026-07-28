@@ -26,6 +26,58 @@ NUMBERED_HEADING = re.compile(r"^(\d+(?:\.\d+)*)\.?\s+")
 ISSUE_URL = re.compile(
     r"^https://github\.com/fruwehq/determa-state-examples/issues/\d+$"
 )
+CONFORMANCE_CASE_LINK = re.compile(
+    r"https://github\.com/fruwehq/determa-state-conformance/tree/"
+    r"v([^/]+)/conformance/core/([0-9]{2}-[A-Za-z0-9-]+)"
+)
+CORE_STATECHARTS_CHAPTER = "docs/guides/core-statecharts.md"
+CORE_STATECHARTS_SPECIFICATION_SECTIONS = (
+    "2",
+    "4.6",
+    "4.7",
+    "6.3",
+    "6.4",
+    "6.5",
+    "6.6",
+)
+CORE_STATECHARTS_CONFORMANCE_CASES = (
+    "02-hierarchy-bubbling",
+    "03-initial-action",
+    "05-variable-scope",
+    "06-payload-typing",
+    "07-internal-external",
+    "08-local-vs-external",
+    "10-history-deep",
+    "11-history-shallow",
+    "15-external-env-refresh",
+    "23-choice",
+    "24-choice-chain",
+    "25-choice-invalid",
+    "26-unreachable",
+    "27-dead-branch",
+    "28-reachable-ok",
+    "32-history-resume-restart",
+    "33-history-capture-timing",
+    "34-history-first-entry",
+    "35-shallow-deep-history",
+    "36-history-variable-reinitialization",
+    "37-destroyed-variable-write",
+    "39-ancestor-internal-transition",
+    "40-noncanonical-transitions",
+    "42-initial-history-rejection",
+    "43-self-history-lifecycle",
+    "44-local-history",
+    "45-proper-ancestor-target",
+    "53-compound-choice-lifecycle",
+    "56-variable-initialization",
+    "57-creation-binding-defaults",
+    "58-missing-creation-binding",
+    "59-payload-default-materialization",
+    "60-payload-default-validation",
+    "62-parsed-value-model",
+    "63-entry-stop-interruption",
+    "84-choice-stop-chain",
+)
 LANGUAGE_BY_SUFFIX = {
     ".yaml": "yaml",
     ".yml": "yaml",
@@ -289,6 +341,7 @@ def check_coverage(
         cases,
         "conformance",
     )
+    check_core_statecharts_coverage(coverage)
     print(f"coverage: {len(spec_sections)} spec sections, {len(cases)} core cases")
 
 
@@ -380,6 +433,79 @@ def check_cel_and_actions_coverage(coverage: dict[str, object]) -> None:
         "CEL/actions coverage: "
         f"{len(CEL_AND_ACTIONS_SPECIFICATION)} spec sections, "
         f"{len(CEL_AND_ACTIONS_CASES)} core cases"
+    )
+
+
+def check_core_statecharts_coverage(coverage: dict[str, object]) -> None:
+    assignments = (
+        (
+            require_list(coverage.get("specification"), "specification coverage"),
+            "id",
+            CORE_STATECHARTS_SPECIFICATION_SECTIONS,
+            "specification",
+        ),
+        (
+            require_list(coverage.get("conformance"), "conformance coverage"),
+            "case",
+            CORE_STATECHARTS_CONFORMANCE_CASES,
+            "conformance",
+        ),
+    )
+    for raw_entries, key, expected_identifiers, label in assignments:
+        entries = [
+            require_map(entry, f"{label} entry")
+            for entry in raw_entries
+        ]
+        mapped = {
+            entry.get(key)
+            for entry in entries
+            if entry.get("chapter") == CORE_STATECHARTS_CHAPTER
+        }
+        expected = set(expected_identifiers)
+        if mapped != expected:
+            raise ValueError(
+                f"core statecharts {label} assignment mismatch; "
+                f"missing={sorted(expected - mapped)}, "
+                f"extra={sorted(mapped - expected)}"
+            )
+        for entry in entries:
+            if entry.get(key) in expected and (
+                entry.get("status") != "covered"
+                or entry.get("chapter") != CORE_STATECHARTS_CHAPTER
+            ):
+                raise ValueError(
+                    f"core statecharts {label} {entry.get(key)} is not covered "
+                    "by the core statecharts chapter"
+                )
+
+    state_version = coverage.get("state_version")
+    if not isinstance(state_version, str):
+        raise ValueError("coverage state_version must be a string")
+    chapter = (ROOT / CORE_STATECHARTS_CHAPTER).read_text()
+    actual_links = set(CONFORMANCE_CASE_LINK.findall(chapter))
+    expected_links = {
+        (state_version, case)
+        for case in CORE_STATECHARTS_CONFORMANCE_CASES
+    }
+    if actual_links != expected_links:
+        raise ValueError(
+            "core statecharts conformance links mismatch; "
+            f"missing={sorted(expected_links - actual_links)}, "
+            f"extra={sorted(actual_links - expected_links)}"
+        )
+    for case in CORE_STATECHARTS_CONFORMANCE_CASES:
+        url = (
+            "https://github.com/fruwehq/determa-state-conformance/tree/"
+            f"v{state_version}/conformance/core/{case}"
+        )
+        if chapter.count(url) != 1:
+            raise ValueError(
+                f"core statecharts conformance link must occur once: {case}"
+            )
+    print(
+        "core statecharts coverage: "
+        f"{len(CORE_STATECHARTS_SPECIFICATION_SECTIONS)} spec sections, "
+        f"{len(CORE_STATECHARTS_CONFORMANCE_CASES)} linked core cases"
     )
 
 
