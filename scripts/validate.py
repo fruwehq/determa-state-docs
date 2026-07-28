@@ -33,6 +33,32 @@ LANGUAGE_BY_SUFFIX = {
     ".rs": "rust",
     ".toml": "toml",
 }
+COMPONENTS_AND_SPAWNING_SPECIFICATION = {"7", "7.1", "7.2", "7.3"}
+COMPONENTS_AND_SPAWNING_CASES = {
+    "09-parallel-components",
+    "13-spawn-completion",
+    "14-explicit-targets",
+    "29-owned-spawn",
+    "30-owned-spawn-cancel",
+    "38-destroyed-reference-binding",
+    "47-scoped-owned-child-lifetime",
+    "48-null-cancel",
+    "49-exit-action-cancel",
+    "51-component-initialization-fault",
+    "52-spawned-initialization-fault",
+    "54-stale-component-target",
+    "55-root-owner-target",
+    "73-synchronous-initialization-cycle",
+    "74-sibling-cleanup-order",
+    "78-component-external-refresh",
+    "80-unbound-owned-child",
+    "81-holder-reference-reuse",
+    "82-instance-reference-target-identity",
+    "83-contained-dynamic-instance-send",
+    "86-initial-component-completion-order",
+    "87-internal-env-target-mode",
+    "91-component-host-input-rejection",
+}
 
 
 def yaml_loader() -> YAML:
@@ -239,6 +265,42 @@ def check_coverage(
     print(f"coverage: {len(spec_sections)} spec sections, {len(cases)} core cases")
 
 
+def check_components_and_spawning_coverage(coverage: dict[str, object]) -> None:
+    chapter_path = "docs/guides/components-and-spawning.md"
+    specification = {
+        require_map(entry, "specification coverage entry")["id"]: require_map(
+            entry, "specification coverage entry"
+        )
+        for entry in require_list(
+            coverage.get("specification"), "specification coverage"
+        )
+    }
+    conformance = {
+        require_map(entry, "conformance coverage entry")["case"]: require_map(
+            entry, "conformance coverage entry"
+        )
+        for entry in require_list(coverage.get("conformance"), "conformance coverage")
+    }
+    for identifier in COMPONENTS_AND_SPAWNING_SPECIFICATION:
+        record = specification[identifier]
+        if record.get("status") != "covered" or record.get("chapter") != chapter_path:
+            raise ValueError(
+                f"components chapter does not cover specification {identifier}"
+            )
+    chapter = (ROOT / chapter_path).read_text()
+    for case in COMPONENTS_AND_SPAWNING_CASES:
+        record = conformance[case]
+        if record.get("status") != "covered" or record.get("chapter") != chapter_path:
+            raise ValueError(f"components chapter does not cover conformance {case}")
+        if f"/{case})" not in chapter:
+            raise ValueError(f"components chapter does not link conformance {case}")
+    print(
+        "components coverage: "
+        f"{len(COMPONENTS_AND_SPAWNING_SPECIFICATION)} spec sections, "
+        f"{len(COMPONENTS_AND_SPAWNING_CASES)} core cases"
+    )
+
+
 def safe_example_path(raw: str) -> PurePosixPath:
     path = PurePosixPath(raw)
     if path.is_absolute() or not path.parts or ".." in path.parts:
@@ -323,7 +385,44 @@ def run_traces(destination: Path) -> None:
         raise ValueError(
             f"trace mismatch: python={python_output!r}, rust={rust_output!r}"
         )
-    print("traces: Python and Rust agree")
+
+    components_machine = destination / "machines" / "order-components.yaml"
+    owned_machine = destination / "machines" / "owned-workers.yaml"
+    components_python = destination / "python" / "components_and_spawning.py"
+    components_rust_manifest = (
+        destination / "rust" / "components-spawning" / "Cargo.toml"
+    )
+    components_python_output = run(
+        sys.executable,
+        str(components_python),
+        str(components_machine),
+        str(owned_machine),
+    )
+    components_rust_output = run(
+        "cargo",
+        "run",
+        "--quiet",
+        "--manifest-path",
+        str(components_rust_manifest),
+        "--",
+        str(components_machine),
+        str(owned_machine),
+    )
+    components_expected = "\n".join(
+        (
+            "components: isolated, refreshed, stale target rejected, completed",
+            "owned: 4 spawned, 2 scoped disposed, bound completed, unbound cascaded",
+        )
+    )
+    if (
+        components_python_output != components_expected
+        or components_rust_output != components_expected
+    ):
+        raise ValueError(
+            "components trace mismatch: "
+            f"python={components_python_output!r}, rust={components_rust_output!r}"
+        )
+    print("traces: Python and Rust agree for first machine and components/spawning")
 
 
 def main() -> None:
@@ -343,6 +442,7 @@ def main() -> None:
 
     coverage, paths = check_versions(args.source_root)
     check_coverage(coverage, paths["specification"], paths["conformance"])
+    check_components_and_spawning_coverage(coverage)
     with tempfile.TemporaryDirectory(prefix="determa-examples-") as temporary:
         destination = Path(temporary)
         extracted = extract_examples(destination)

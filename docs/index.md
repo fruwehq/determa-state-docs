@@ -17,6 +17,9 @@ This tutorial targets **Determa State 0.0.7** and numeric **`format: 1`**.
 
 You do not need to understand the full specification first.
 
+Continue with [components and owned instances](guides/components-and-spawning.md) when
+one machine must coordinate isolated reusable or dynamically created runtimes.
+
 ## What is portable?
 
 The portable core is a pure foreground state transform. Your application supplies one
