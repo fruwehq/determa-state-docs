@@ -79,11 +79,27 @@ CORE_STATECHARTS_CONFORMANCE_CASES = (
     "84-choice-stop-chain",
 )
 LANGUAGE_BY_SUFFIX = {
+    ".json": "json",
     ".yaml": "yaml",
     ".yml": "yaml",
     ".py": "python",
     ".rs": "rust",
     ".toml": "toml",
+}
+PERSISTENCE_MIGRATION_CHAPTER = "docs/guides/persistence-and-migration.md"
+PERSISTENCE_MIGRATION_SPECIFICATION = {
+    "16", "16.1", "16.2", "16.3", "16.4", "16.5", "16.6", "16.7",
+    "16.8", "16.9", "16.11", "16.12",
+}
+PERSISTENCE_MIGRATION_CASES = {
+    "94-aggregate-wire-round-trip",
+    "96-definition-resolution",
+    "98-unchanged-definition-resume",
+    "100-explicit-active-state-remap",
+    "101-deleted-active-state-totality",
+    "106-counter-and-identity-preservation",
+    "108-migration-retry-and-rollback",
+    "109-migration-then-dispatch",
 }
 COMPONENTS_AND_SPAWNING_SPECIFICATION = {"7", "7.1", "7.2", "7.3"}
 COMPONENTS_AND_SPAWNING_CASES = {
@@ -564,6 +580,43 @@ def check_effects_faults_hosting_coverage(coverage: dict[str, object]) -> None:
     )
 
 
+def check_persistence_migration_coverage(coverage: dict[str, object]) -> None:
+    assignments = (
+        ("specification", "id", PERSISTENCE_MIGRATION_SPECIFICATION),
+        ("conformance", "case", PERSISTENCE_MIGRATION_CASES),
+    )
+    for label, key, expected in assignments:
+        entries = require_list(coverage.get(label), f"{label} coverage")
+        mapped = {
+            require_map(entry, f"{label} entry")[key]
+            for entry in entries
+            if require_map(entry, f"{label} entry").get("status") == "covered"
+            and require_map(entry, f"{label} entry").get("chapter")
+            == PERSISTENCE_MIGRATION_CHAPTER
+        }
+        if mapped != expected:
+            raise ValueError(
+                f"persistence/migration {label} mapping mismatch; "
+                f"expected={sorted(expected)}, actual={sorted(mapped)}"
+            )
+    chapter = (ROOT / PERSISTENCE_MIGRATION_CHAPTER).read_text()
+    state_version = coverage["state_version"]
+    for case in PERSISTENCE_MIGRATION_CASES:
+        url = (
+            "https://github.com/fruwehq/determa-state-conformance/tree/"
+            f"v{state_version}/conformance/core/{case}"
+        )
+        if chapter.count(url) != 1:
+            raise ValueError(
+                f"persistence/migration conformance link must occur once: {case}"
+            )
+    print(
+        "persistence/migration coverage: "
+        f"{len(PERSISTENCE_MIGRATION_SPECIFICATION)} spec sections, "
+        f"{len(PERSISTENCE_MIGRATION_CASES)} core cases"
+    )
+
+
 def check_core_statecharts_coverage(coverage: dict[str, object]) -> None:
     assignments = (
         (
@@ -864,6 +917,37 @@ def run_traces(destination: Path) -> None:
         )
     print("traces: Python and Rust agree on effects/faults/hosting")
 
+    persistence_root = destination / "persistence-tutorial"
+    persistence_expected = (
+        "restored=v1; duplicate=ignored; outbox=1; "
+        "missing_state=migration_totality_failure; migrated=v2; status=completed"
+    )
+    persistence_python_output = run(
+        sys.executable,
+        str(persistence_root / "app.py"),
+        str(persistence_root / "tutorial.db"),
+        "scenario",
+    )
+    persistence_rust_output = run(
+        "cargo",
+        "run",
+        "--quiet",
+        "--manifest-path",
+        str(persistence_root / "rust" / "Cargo.toml"),
+        "--",
+        str(persistence_root),
+    )
+    if (
+        persistence_python_output != persistence_expected
+        or persistence_rust_output != persistence_expected
+    ):
+        raise ValueError(
+            "persistence/migration trace mismatch: "
+            f"python={persistence_python_output!r}, "
+            f"rust={persistence_rust_output!r}"
+        )
+    print("traces: Python and Rust agree on persistence/migration")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -885,6 +969,7 @@ def main() -> None:
     check_components_and_spawning_coverage(coverage)
     check_cel_and_actions_coverage(coverage)
     check_effects_faults_hosting_coverage(coverage)
+    check_persistence_migration_coverage(coverage)
     with tempfile.TemporaryDirectory(prefix="determa-examples-") as temporary:
         destination = Path(temporary)
         extracted = extract_examples(destination)
