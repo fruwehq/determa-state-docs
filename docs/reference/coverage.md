@@ -19,7 +19,7 @@ conformance case directories. Missing, stale, or duplicate entries fail the buil
 The current tutorial covers the first guarded foreground machine,
 [core statechart structure and control flow](../guides/core-statecharts.md), the
 [complete portable CEL and structured-action surface](../guides/cel-and-actions.md), and
-[components and owned instances](../guides/components-and-spawning.md). Issues
-[#6](https://github.com/fruwehq/determa-state-examples/issues/6) and
-[#7](https://github.com/fruwehq/determa-state-examples/issues/7) track the remaining
-chapters.
+[components and owned instances](../guides/components-and-spawning.md), and
+[effects, faults, inspection, and hosting](../guides/effects-faults-hosting.md).
+[Issue #7](https://github.com/fruwehq/determa-state-examples/issues/7) tracks the
+remaining persistence and migration chapter after that behavior is released.

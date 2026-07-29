@@ -138,6 +138,53 @@ CEL_AND_ACTIONS_CASES = {
     "72-cel-reversed-or-nonabsorbed-error",
     "79-missing-refresh-field",
 }
+EFFECTS_FAULTS_HOSTING_CHAPTER = "docs/guides/effects-faults-hosting.md"
+EFFECTS_FAULTS_HOSTING_SPECIFICATION = {
+    "9",
+    "10",
+    "10.1",
+    "10.2",
+    "10.3",
+    "11",
+    "11.1",
+    "11.2",
+    "11.3",
+    "11.4",
+    "12",
+    "13",
+}
+EFFECTS_FAULTS_HOSTING_CASES = {
+    "16-timer-extension",
+    "18-domain-failure",
+    "19-public-event-contract",
+    "20-invalid-public-correlation",
+    "46-root-boundary-validation",
+    "50-root-fault-terminal-aggregate",
+    "67-bundle-state-binding",
+    "75-root-initialization-fault",
+    "76-invalid-create-unicode",
+    "77-invalid-dispatch-unicode",
+    "85-initialization-emission-rollback",
+    "88-reserved-payload-validation",
+    "89-nonfinite-creation-binding",
+    "90-host-numeric-normalization",
+    "92-faulted-root-component-precedence",
+    "93-optional-correlation",
+}
+EFFECTS_FAULTS_HOSTING_SPECIFICATION_ANCHORS = {
+    "9": "9-deterministic-identities-and-emissions",
+    "10": "10-faults-and-envelope-disposition",
+    "10.1": "101-engine-faults",
+    "10.2": "102-contained-runtime-faults",
+    "10.3": "103-domain-failures",
+    "11": "11-plugins-and-hosting",
+    "11.1": "111-queue-plugins",
+    "11.2": "112-timer-extensions",
+    "11.3": "113-external-effects",
+    "11.4": "114-hosting-profiles",
+    "12": "12-inspection-and-visualization",
+    "13": "13-deliberately-unsupported-in-format-1",
+}
 
 
 def yaml_loader() -> YAML:
@@ -436,6 +483,87 @@ def check_cel_and_actions_coverage(coverage: dict[str, object]) -> None:
     )
 
 
+def check_effects_faults_hosting_coverage(coverage: dict[str, object]) -> None:
+    specification = {
+        require_map(entry, "specification coverage entry")["id"]: require_map(
+            entry, "specification coverage entry"
+        )
+        for entry in require_list(
+            coverage.get("specification"), "specification coverage"
+        )
+    }
+    conformance = {
+        require_map(entry, "conformance coverage entry")["case"]: require_map(
+            entry, "conformance coverage entry"
+        )
+        for entry in require_list(coverage.get("conformance"), "conformance coverage")
+    }
+    mapped_specification = {
+        identifier
+        for identifier, record in specification.items()
+        if record.get("status") == "covered"
+        and record.get("chapter") == EFFECTS_FAULTS_HOSTING_CHAPTER
+    }
+    if mapped_specification != EFFECTS_FAULTS_HOSTING_SPECIFICATION:
+        raise ValueError(
+            "effects/faults/hosting specification mapping mismatch; "
+            f"expected={sorted(EFFECTS_FAULTS_HOSTING_SPECIFICATION)}, "
+            f"actual={sorted(mapped_specification)}"
+        )
+    mapped_cases = {
+        case
+        for case, record in conformance.items()
+        if record.get("status") == "covered"
+        and record.get("chapter") == EFFECTS_FAULTS_HOSTING_CHAPTER
+    }
+    if mapped_cases != EFFECTS_FAULTS_HOSTING_CASES:
+        raise ValueError(
+            "effects/faults/hosting conformance mapping mismatch; "
+            f"expected={sorted(EFFECTS_FAULTS_HOSTING_CASES)}, "
+            f"actual={sorted(mapped_cases)}"
+        )
+
+    state_version = coverage.get("state_version")
+    if not isinstance(state_version, str):
+        raise ValueError("coverage state_version must be a string")
+    chapter = (ROOT / EFFECTS_FAULTS_HOSTING_CHAPTER).read_text()
+    for identifier, anchor in EFFECTS_FAULTS_HOSTING_SPECIFICATION_ANCHORS.items():
+        url = (
+            "https://github.com/fruwehq/determa-state-spec/blob/"
+            f"v{state_version}/SPEC.md#{anchor}"
+        )
+        if chapter.count(url) != 1:
+            raise ValueError(
+                "effects/faults/hosting specification link must occur once: "
+                f"{identifier}"
+            )
+    for case in EFFECTS_FAULTS_HOSTING_CASES:
+        url = (
+            "https://github.com/fruwehq/determa-state-conformance/tree/"
+            f"v{state_version}/conformance/core/{case}"
+        )
+        if chapter.count(url) != 1:
+            raise ValueError(
+                f"effects/faults/hosting conformance link must occur once: {case}"
+            )
+    required_boundaries = (
+        "does **not** define portable aggregate bytes",
+        "do not promise\ndelivery exactly once",
+        "A scheduling intent is not a portable timer",
+        "authentication, authorization, tenancy, transport, and presentation",
+    )
+    for boundary in required_boundaries:
+        if boundary not in chapter:
+            raise ValueError(
+                f"effects/faults/hosting boundary statement drift: {boundary!r}"
+            )
+    print(
+        "effects/faults/hosting coverage: "
+        f"{len(EFFECTS_FAULTS_HOSTING_SPECIFICATION)} spec sections, "
+        f"{len(EFFECTS_FAULTS_HOSTING_CASES)} core cases"
+    )
+
+
 def check_core_statecharts_coverage(coverage: dict[str, object]) -> None:
     assignments = (
         (
@@ -703,6 +831,39 @@ def run_traces(destination: Path) -> None:
         )
     print("traces: Python and Rust agree on first-machine and CEL/action traces")
 
+    effects_machine = destination / "machines" / "effects-faults-hosting.yaml"
+    effects_python = destination / "python" / "effects_faults_hosting.py"
+    effects_rust_manifest = (
+        destination / "rust" / "effects-faults-hosting" / "Cargo.toml"
+    )
+    effects_python_output = run(
+        sys.executable,
+        str(effects_python),
+        str(effects_machine),
+    )
+    effects_rust_output = run(
+        "cargo",
+        "run",
+        "--quiet",
+        "--manifest-path",
+        str(effects_rust_manifest),
+        "--",
+        str(effects_machine),
+    )
+    effects_expected = (
+        "effect=deterministic; correlation=enforced; domain=handled; "
+        "timer=host-event; fault=rolled-back; terminal=stable"
+    )
+    if (
+        effects_python_output != effects_expected
+        or effects_rust_output != effects_expected
+    ):
+        raise ValueError(
+            "effects/faults/hosting trace mismatch: "
+            f"python={effects_python_output!r}, rust={effects_rust_output!r}"
+        )
+    print("traces: Python and Rust agree on effects/faults/hosting")
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -723,6 +884,7 @@ def main() -> None:
     check_coverage(coverage, paths["specification"], paths["conformance"])
     check_components_and_spawning_coverage(coverage)
     check_cel_and_actions_coverage(coverage)
+    check_effects_faults_hosting_coverage(coverage)
     with tempfile.TemporaryDirectory(prefix="determa-examples-") as temporary:
         destination = Path(temporary)
         extracted = extract_examples(destination)

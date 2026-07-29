@@ -28,6 +28,11 @@ and atomic fault rollback through matching Python and Rust traces.
 Use [components and owned instances](guides/components-and-spawning.md) when
 one machine must coordinate isolated reusable or dynamically created runtimes.
 
+Finish the released format-1 tutorial with
+[effects, faults, inspection, and hosting](guides/effects-faults-hosting.md). It
+explains public effect intents, correlation, deterministic results, terminal states,
+and the boundary between the portable core and host infrastructure.
+
 ## What is portable?
 
 The portable core is a pure foreground state transform. Your application supplies one
