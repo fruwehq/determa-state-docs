@@ -9,7 +9,25 @@ The normative contract is
 [specification section 16](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#16-portable-persistence-and-definition-migration).
 This chapter explains that contract; it does not add new behavior.
 
-## 1. Create the lab
+## 1. Check prerequisites
+
+You need:
+
+- Python 3.11 or newer;
+- Git and network access to clone the four immutable release sources; and
+- a Rust toolchain compatible with Determa State 0.1.0. The released repositories
+  validate with Rust 1.95.
+
+Check them before creating files:
+
+```sh
+python3 --version
+git --version
+rustc --version
+cargo --version
+```
+
+## 2. Create the lab
 
 Start in an empty directory:
 
@@ -18,7 +36,8 @@ mkdir determa-persistence-reference
 cd determa-persistence-reference
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install determa-state==0.1.0 pytest==8.4.2
+python -m pip install \
+  determa-state==0.1.0 pytest==8.4.2 ruamel.yaml==0.19.1
 ```
 
 Create the following script. It downloads the immutable released sources, checks their
@@ -77,7 +96,7 @@ resolver contents, emissions, dispositions, stable failure codes, and caller own
 for 105 vectors in cases 94 through 115. This is deliberately stronger than a smoke
 test.
 
-## 2. Inspect what the vectors prove
+## 3. Inspect what the vectors prove
 
 The conformance harness is the arbiter, but a passing test count does not teach you what
 changed. Save this inspector as `inspect_vectors.py`. It checks the pedagogically
@@ -91,10 +110,13 @@ import json
 from pathlib import Path
 import sys
 
-import yaml
+from ruamel.yaml import YAML
 
 
 ROOT = Path(sys.argv[1]) / "conformance" / "core"
+YAML_1_2 = YAML(typ="safe")
+YAML_1_2.version = (1, 2)
+YAML_1_2.allow_duplicate_keys = False
 
 
 def case(number: int) -> Path:
@@ -108,7 +130,7 @@ def document(path: Path):
 
 
 def test(number: int):
-    return yaml.safe_load((case(number) / "test.yaml").read_text())
+    return YAML_1_2.load((case(number) / "test.yaml").read_text())
 
 
 def vectors(number: int):
@@ -375,7 +397,7 @@ Expected output:
 105 vectors; package=trusted transport; transforms=total and local; terminal=preserved; limits=deterministic; decimals=lossless
 ```
 
-## 3. Know the three independent identities
+## 4. Know the three independent identities
 
 [Section 16.1](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#161-independent-artifact-identities)
 separates the machine definition, aggregate, and migration descriptor. A definition
@@ -398,7 +420,7 @@ contains the root, components, owned spawned descendants, variables, history, co
 faults, and nominal references. It is one transaction boundary. Do not store or advance
 an owned child independently.
 
-## 4. Bind immutable identity to an approved definition
+## 5. Bind immutable identity to an approved definition
 
 [Section 16.4](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#164-immutable-identity-and-mutable-definition-binding)
 keeps creation and runtime identity immutable while allowing `current_definition` to
@@ -412,7 +434,7 @@ distinguishes a compatible definition-only update from a state-bearing transform
 shows the compatible path: runtime identity and logical state stay fixed while the
 definition binding, aggregate digest, migration sequence, and audit advance.
 
-## 5. Treat migration as closed data
+## 6. Treat migration as closed data
 
 [Descriptors in §16.7](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#167-immutable-declarative-migration-descriptors)
 are immutable data, not code. Their restricted CEL transforms cannot call Python,
@@ -444,7 +466,7 @@ accounted for. The vectors demonstrate:
 Rules read one immutable pre-descriptor snapshot. They cannot combine values from
 different runtimes or observe another rule's output.
 
-## 6. Keep terminal aggregates terminal
+## 7. Keep terminal aggregates terminal
 
 [Section 16.10](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1610-terminal-aggregates)
 requires `maintenance_mode: true` for a non-empty terminal migration. The descriptor
@@ -457,7 +479,7 @@ checks the completed path.
 [Case 111](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/111-faulted-terminal-migration)
 checks fault preservation and policy rejection.
 
-## 7. Separate pure failures from host quarantine
+## 8. Separate pure failures from host quarantine
 
 The SQLite tutorial implements
 [the transactional ordering in §16.11](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1611-lazy-transactional-host-ordering):
@@ -477,7 +499,7 @@ the failure audit. This is not an engine fault, dead letter, or aggregate status
 [Case 113](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/113-migration-failure-completeness)
 checks the closed failure surface; the SQLite guide checks the database transaction.
 
-## 8. Move aggregates without inventing imports
+## 9. Move aggregates without inventing imports
 
 [Package transport in §16.13](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1613-package-transport)
 is an archive or transfer envelope containing one aggregate plus optional definition
@@ -491,7 +513,7 @@ seeding, idempotency, and collision refusal. This transport does **not** enable 
 imports in machine YAML. Portable package imports remain unsupported format-1
 semantics.
 
-## 9. Set limits before loading untrusted artifacts
+## 10. Set limits before loading untrusted artifacts
 
 [Section 16.14](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1614-security-and-resource-limits)
 requires digest checks, pinned trust, retained referenced definitions, and configurable

@@ -428,8 +428,15 @@ def dispatch_once(db, event, event_id, payload=None):
 
 def quarantine_broken_migration(db):
     event_id = "input-complete-1"
+    cache = artifact_cache(db)
     db.execute("BEGIN IMMEDIATE")
     try:
+        previous = db.execute(
+            "SELECT status,disposition FROM inbox WHERE event_id=?", (event_id,)
+        ).fetchone()
+        if previous:
+            db.rollback()
+            return f"duplicate:{previous[0]}:{previous[1]}"
         blocked = db.execute(
             "SELECT failure_code FROM blocked_inbox WHERE event_id=?", (event_id,)
         ).fetchone()
@@ -441,7 +448,7 @@ def quarantine_broken_migration(db):
         ).fetchone()[0]
         aggregate_digest = json.loads(encoded)["aggregate_state_digest"]
         result = ds.migrate_aggregate(
-            encoded, TARGET, [BROKEN], SQLiteResolver(db), maintenance_mode=False
+            encoded, TARGET, [BROKEN], cache, maintenance_mode=False
         )
         assert result.failure is not None
         assert db.execute(
@@ -562,6 +569,8 @@ def scenario(db):
     assert final["inbox"] == 2 and final["outbox"] == 1 and final["audits"] == 1
     assert final["blocked"] == 0 and final["quarantined"] == 0
     assert final["failure_audits"] == 1
+    assert quarantine_broken_migration(db) == "duplicate:completed:handled"
+    assert inspect(db) == final
     assert migrate_and_complete(db) == "duplicate:completed:handled"
     assert inspect(db) == final
     print(
@@ -627,6 +636,8 @@ python app.py tutorial.db inspect
 python app.py tutorial.db check-broken
 python app.py tutorial.db complete
 python app.py tutorial.db inspect
+python app.py tutorial.db check-broken
+python app.py tutorial.db inspect
 python app.py tutorial.db complete
 python app.py tutorial.db inspect
 ```
@@ -653,7 +664,10 @@ migrates and dispatches in one transaction, moves the blocked item into the comm
 inbox, clears quarantine, and retains the failure audit for operators. Final inspection
 reports version `2`, migration sequence `1`, two committed inbox records, one outbox
 row, one successful migration audit, one retained failure audit, and no blocked or
-quarantined row. The second `complete` command returns
+quarantined row. The following `check-broken` command reads the committed inbox outcome
+before considering quarantine and returns
+`migration=duplicate:completed:handled`; the next inspection proves aggregate, inbox,
+outbox, audits, and quarantine remain unchanged. The second `complete` command returns
 `status=duplicate:completed:handled` from the locked committed inbox row. It never
 reads or migrates the aggregate.
 
