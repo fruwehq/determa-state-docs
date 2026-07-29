@@ -136,19 +136,19 @@ specification:
   - id: "15"
     status: non_user_facing
     reason: The roadmap belongs to the separate real-world examples repository and is not tutorial or runtime behavior.
-  - { id: "16", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.1", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.2", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.3", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.4", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.5", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.6", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.7", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.8", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.9", status: covered, chapter: docs/guides/persistence-and-migration.md }
+  - { id: "16", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.1", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.2", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.3", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.4", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.5", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.6", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.7", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.8", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.9", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
   - { id: "16.10", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
   - { id: "16.11", status: covered, chapter: docs/guides/persistence-and-migration.md }
-  - { id: "16.12", status: covered, chapter: docs/guides/persistence-and-migration.md }
+  - { id: "16.12", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
   - { id: "16.13", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
   - { id: "16.14", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
 

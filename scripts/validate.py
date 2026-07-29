@@ -87,10 +87,7 @@ LANGUAGE_BY_SUFFIX = {
     ".toml": "toml",
 }
 PERSISTENCE_MIGRATION_CHAPTER = "docs/guides/persistence-and-migration.md"
-PERSISTENCE_MIGRATION_SPECIFICATION = {
-    "16", "16.1", "16.2", "16.3", "16.4", "16.5", "16.6", "16.7",
-    "16.8", "16.9", "16.11", "16.12",
-}
+PERSISTENCE_MIGRATION_SPECIFICATION = {"16.11"}
 PERSISTENCE_MIGRATION_CASES = {
     "94-aggregate-wire-round-trip",
     "96-definition-resolution",

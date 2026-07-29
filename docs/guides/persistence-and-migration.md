@@ -280,7 +280,7 @@ def open_database(path):
           root_instance_id TEXT PRIMARY KEY, aggregate_bytes BLOB NOT NULL);
         CREATE TABLE IF NOT EXISTS inbox(
           event_id TEXT PRIMARY KEY, root_instance_id TEXT NOT NULL,
-          disposition TEXT NOT NULL);
+          status TEXT NOT NULL, disposition TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS outbox(
           effect_id TEXT PRIMARY KEY, root_instance_id TEXT NOT NULL,
           sequence INTEGER NOT NULL, intent_json TEXT NOT NULL,
@@ -377,9 +377,12 @@ def dispatch_once(db, event, event_id, payload=None):
     cache = artifact_cache(db)
     db.execute("BEGIN IMMEDIATE")
     try:
-        if db.execute("SELECT 1 FROM inbox WHERE event_id=?", (event_id,)).fetchone():
+        previous = db.execute(
+            "SELECT status,disposition FROM inbox WHERE event_id=?", (event_id,)
+        ).fetchone()
+        if previous:
             db.rollback()
-            return "duplicate"
+            return f"duplicate:{previous[0]}:{previous[1]}"
         encoded = db.execute(
             "SELECT aggregate_bytes FROM aggregates WHERE root_instance_id='order-100'"
         ).fetchone()[0]
@@ -394,8 +397,8 @@ def dispatch_once(db, event, event_id, payload=None):
             (next_bytes,),
         )
         db.execute(
-            "INSERT INTO inbox VALUES(?,?,?)",
-            (event_id, "order-100", result["disposition"]),
+            "INSERT INTO inbox VALUES(?,?,?,?)",
+            (event_id, "order-100", result["status"], result["disposition"]),
         )
         for intent in result["emissions"]:
             if intent["target"] == "external":
@@ -429,6 +432,13 @@ def migrate_and_complete(db):
     cache = artifact_cache(db)
     db.execute("BEGIN IMMEDIATE")
     try:
+        previous = db.execute(
+            "SELECT status,disposition FROM inbox WHERE event_id=?",
+            ("input-complete-1",),
+        ).fetchone()
+        if previous:
+            db.rollback()
+            return f"duplicate:{previous[0]}:{previous[1]}"
         encoded = db.execute("SELECT aggregate_bytes FROM aggregates").fetchone()[0]
         restored = ds.restore_aggregate(encoded, cache)
         result = ds.migrate_and_dispatch(
@@ -439,8 +449,8 @@ def migrate_and_complete(db):
         assert result.failure is None
         db.execute("UPDATE aggregates SET aggregate_bytes=?", (result.aggregate_bytes,))
         db.execute(
-            "INSERT INTO inbox VALUES(?,?,?)",
-            ("input-complete-1", "order-100", result.disposition),
+            "INSERT INTO inbox VALUES(?,?,?,?)",
+            ("input-complete-1", "order-100", result.status, result.disposition),
         )
         for audit in result.audit_records:
             db.execute(
@@ -449,7 +459,7 @@ def migrate_and_complete(db):
                  json.dumps(audit, sort_keys=True)),
             )
         db.commit()
-        return result.status
+        return f"{result.status}:{result.disposition}"
     except Exception:
         db.rollback()
         raise
@@ -480,14 +490,16 @@ def scenario(db):
     before = inspect(db)
     assert dispatch_once(
         db, "submit", "input-submit-1", {"order_id": "order-100"}
-    ) == "duplicate"
+    ) == "duplicate:running:handled"
     assert inspect(db) == before
     assert broken_migration(db) == "migration_totality_failure"
-    assert migrate_and_complete(db) == "completed"
+    assert migrate_and_complete(db) == "completed:handled"
     final = inspect(db)
     assert final["machine_version"] == "2"
     assert final["migration_sequence"] == "1"
     assert final["inbox"] == 2 and final["outbox"] == 1 and final["audits"] == 1
+    assert migrate_and_complete(db) == "duplicate:completed:handled"
+    assert inspect(db) == final
     print(
         "restored=v1; duplicate=ignored; outbox=1; "
         "missing_state=migration_totality_failure; migrated=v2; status=completed"
@@ -550,16 +562,25 @@ python app.py tutorial.db inspect
 python app.py tutorial.db check-broken
 python app.py tutorial.db complete
 python app.py tutorial.db inspect
+python app.py tutorial.db complete
+python app.py tutorial.db inspect
 ```
 
 Before migration, inspection reports machine version `1`, migration sequence `0`,
 active state `awaiting_fulfillment`, one inbox record, and one outbox intent. The
 duplicate does not call the engine or add rows.
 
-The incomplete descriptor fails with `migration_totality_failure`. The aggregate bytes
-remain exactly unchanged. The `complete` command then uses the explicit descriptor to
-migrate and dispatch in one transaction. Final inspection reports version `2`,
-migration sequence `1`, two inbox records, one outbox row, and one audit record.
+`check-broken` is a pure deterministic migration preview and retry. It deliberately
+does not model the permanent-failure quarantine, blocked-inbox, or failure-audit host
+flow from specification section 16.12. The incomplete descriptor fails twice with
+`migration_totality_failure`, and the aggregate bytes remain exactly unchanged.
+
+The first `complete` command uses the explicit descriptor to migrate and dispatch in
+one transaction. Final inspection reports version `2`, migration sequence `1`, two
+inbox records, one outbox row, and one audit record. The second `complete` command
+returns `status=duplicate:completed:handled` from the locked inbox row. It never reads
+or migrates the aggregate, and the following inspection proves that aggregate digest,
+outbox, audit, and inbox counts remain unchanged.
 
 SQLite makes this local transaction atomic. It does **not** make delivery to a payment
 provider, broker, or other process exactly once. Dispatch the outbox after commit,
