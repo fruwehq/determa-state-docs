@@ -24,7 +24,7 @@ ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE_MARKER = re.compile(r"^<!--\s*determa-example:\s*([^\s]+)\s*-->\s*$")
 NUMBERED_HEADING = re.compile(r"^(\d+(?:\.\d+)*)\.?\s+")
 ISSUE_URL = re.compile(
-    r"^https://github\.com/fruwehq/determa-state-examples/issues/\d+$"
+    r"^https://github\.com/fruwehq/determa-state-docs/issues/\d+$"
 )
 CONFORMANCE_CASE_LINK = re.compile(
     r"https://github\.com/fruwehq/determa-state-conformance/tree/"
@@ -472,7 +472,7 @@ def check_cel_and_actions_coverage(coverage: dict[str, object]) -> None:
     for case in CEL_AND_ACTIONS_CASES:
         link = (
             "https://github.com/fruwehq/determa-state-conformance/"
-            f"tree/v0.0.7/conformance/core/{case}"
+            f"tree/v0.1.0/conformance/core/{case}"
         )
         if f"]({link})" not in chapter:
             raise ValueError(f"CEL/actions chapter does not link conformance {case}")
@@ -547,7 +547,7 @@ def check_effects_faults_hosting_coverage(coverage: dict[str, object]) -> None:
                 f"effects/faults/hosting conformance link must occur once: {case}"
             )
     required_boundaries = (
-        "does **not** define portable aggregate bytes",
+        "also defines portable aggregate serialization",
         "do not promise\ndelivery exactly once",
         "A scheduling intent is not a portable timer",
         "authentication, authorization, tenancy, transport, and presentation",

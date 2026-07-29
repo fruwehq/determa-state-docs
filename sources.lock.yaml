@@ -1,22 +1,22 @@
-state_version: "0.0.7"
+state_version: "0.1.0"
 repositories:
   specification:
     repository: fruwehq/determa-state-spec
-    tag: v0.0.7
-    commit: 09c717a40c75b99612e54d764b5f1bdfa4b94f96
+    tag: v0.1.0
+    commit: c1635d74e6a216301a8986d37be8ce7e7111dfd7
     checkout: determa-state-spec
   conformance:
     repository: fruwehq/determa-state-conformance
-    tag: v0.0.7
-    commit: 74e477087fd31561600aacf652cccae571a5ea9a
+    tag: v0.1.0
+    commit: 600523ca08c3b8a6ee790439a32dc4ce47f71b95
     checkout: determa-state-conformance
   python:
     repository: fruwehq/determa-state-python
-    tag: v0.0.7
-    commit: 4958ac8dd514bce43d3e7ed70dbbbb7164fc713b
+    tag: v0.1.0
+    commit: 7b17d788b48049648e7e463aa3d35ba13dc1aa6e
     checkout: determa-state-python
   rust:
     repository: fruwehq/determa-state-rust
-    tag: v0.0.7
-    commit: c026dc0d6bd82138c1e5042d90252f78a7dea6bf
+    tag: v0.1.0
+    commit: d17480c8b281dcd17953f59afcf6b5d23ff44efd
     checkout: determa-state-rust

@@ -1,8 +1,8 @@
-site_name: Determa State tutorial
-site_description: Beginner-friendly, runnable Determa State tutorials
-site_url: https://fruwehq.github.io/determa-state-examples/
-repo_url: https://github.com/fruwehq/determa-state-examples
-repo_name: fruwehq/determa-state-examples
+site_name: Determa State documentation
+site_description: Determa State manual and beginner-friendly runnable tutorials
+site_url: https://fruwehq.github.io/determa-state-docs/
+repo_url: https://github.com/fruwehq/determa-state-docs
+repo_name: fruwehq/determa-state-docs
 edit_uri: edit/main/docs/
 strict: true
 

@@ -1,10 +1,10 @@
 # Coverage status
 
-[`coverage.yaml`](https://github.com/fruwehq/determa-state-examples/blob/main/coverage.yaml)
+[`coverage.yaml`](https://github.com/fruwehq/determa-state-docs/blob/main/coverage.yaml)
 is the machine-readable source of truth for tutorial coverage.
 
 It inventories every normative section and every actual core conformance case at the
-pinned Determa State 0.0.7 revisions.
+pinned Determa State 0.1.0 revisions.
 
 Each entry is:
 
@@ -21,5 +21,5 @@ The current tutorial covers the first guarded foreground machine,
 [complete portable CEL and structured-action surface](../guides/cel-and-actions.md), and
 [components and owned instances](../guides/components-and-spawning.md), and
 [effects, faults, inspection, and hosting](../guides/effects-faults-hosting.md).
-[Issue #7](https://github.com/fruwehq/determa-state-examples/issues/7) tracks the
-remaining persistence and migration chapter after that behavior is released.
+[Issue #7](https://github.com/fruwehq/determa-state-docs/issues/7) tracks the
+remaining persistence and migration chapter for the released 0.1.0 behavior.

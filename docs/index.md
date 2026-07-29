@@ -1,10 +1,14 @@
-# Determa State tutorial
+# Determa State documentation
 
 Determa State runs the same state machine definition consistently across languages.
 You define behavior once in YAML or JSON, then use a foreground engine call to create
 and advance a machine.
 
-This tutorial targets **Determa State 0.0.7** and numeric **`format: 1`**.
+This tutorial targets **Determa State 0.1.0** and numeric **`format: 1`**.
+
+This site owns the manual and progressive tutorial. Independent, fully working
+real-world applications live in
+[`fruwehq/determa-state-examples`](https://github.com/fruwehq/determa-state-examples).
 
 ## Start here
 
@@ -41,4 +45,4 @@ brokers, and schedulers belong to the host around that core.
 
 The [coverage status](reference/coverage.md) shows what is complete and what remains
 planned. Normative details always come from the
-[v0.0.7 specification](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md).
+[v0.1.0 specification](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md).

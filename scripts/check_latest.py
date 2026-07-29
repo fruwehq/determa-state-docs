@@ -25,7 +25,7 @@ def github_json(url: str, token: str | None) -> object:
         url,
         headers={
             "Accept": "application/vnd.github+json",
-            "User-Agent": "determa-state-examples-drift-check",
+            "User-Agent": "determa-state-docs-drift-check",
             **({"Authorization": f"Bearer {token}"} if token else {}),
         },
     )

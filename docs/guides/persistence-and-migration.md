@@ -1,12 +1,12 @@
 # Persistence and definition migration
 
-This chapter is **blocked** by
-[determa-state-spec#51](https://github.com/fruwehq/determa-state-spec/issues/51).
+This chapter is **planned** in
+[documentation issue #7](https://github.com/fruwehq/determa-state-docs/issues/7).
 
-Determa State 0.0.7 returns JSON-compatible logical state, but format 1 does not yet
-define a portable snapshot artifact or machine-definition migration contract. This
-tutorial will not invent one.
+Determa State 0.1.0 defines the portable aggregate artifact and machine-definition
+migration contract. The specification, conformance suite, and both engines contain the
+released behavior.
 
-[Issue #7](https://github.com/fruwehq/determa-state-examples/issues/7) will add a
-database-backed, lazy-migration example only after the contract is specified, covered
-by conformance, implemented by both engines, and released.
+Issue #7 will teach the contract through a database-backed, lazy-migration tutorial.
+Until that focused tutorial change lands, this page remains a placeholder and does not
+duplicate or partially restate the normative rules.

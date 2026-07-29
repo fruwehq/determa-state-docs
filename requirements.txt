@@ -1,4 +1,4 @@
-determa-state==0.0.7
+determa-state==0.1.0
 jsonschema==4.26.0
 markdown-it-py==4.2.0
 mkdocs==1.6.1
