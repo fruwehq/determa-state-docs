@@ -219,6 +219,8 @@ Save it as `migration-good.json`.
 The host stores definitions and descriptors once under their content digests. An
 aggregate row stores only canonical aggregate bytes. One SQLite transaction owns the
 inbox decision, aggregate replacement, ordered outbox inserts, and migration audit.
+This implements the
+[lazy transactional host order in specification §16.11](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1611-lazy-transactional-host-ordering).
 
 <!-- determa-example: persistence-tutorial/app.py -->
 ```python
@@ -289,6 +291,16 @@ def open_database(path):
           root_instance_id TEXT NOT NULL, migration_sequence INTEGER NOT NULL,
           record_json TEXT NOT NULL,
           PRIMARY KEY(root_instance_id, migration_sequence));
+        CREATE TABLE IF NOT EXISTS blocked_inbox(
+          event_id TEXT PRIMARY KEY, root_instance_id TEXT NOT NULL,
+          failure_code TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS quarantine(
+          root_instance_id TEXT PRIMARY KEY, aggregate_state_digest TEXT NOT NULL,
+          failure_code TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS migration_failure_audit(
+          event_id TEXT PRIMARY KEY, root_instance_id TEXT NOT NULL,
+          aggregate_state_digest TEXT NOT NULL, failure_code TEXT NOT NULL,
+          route_json TEXT NOT NULL);
         """
     )
     return db
@@ -414,18 +426,45 @@ def dispatch_once(db, event, event_id, payload=None):
         raise
 
 
-def broken_migration(db):
-    encoded = db.execute("SELECT aggregate_bytes FROM aggregates").fetchone()[0]
-    first = ds.migrate_aggregate(
-        encoded, TARGET, [BROKEN], SQLiteResolver(db), maintenance_mode=False
-    )
-    retry = ds.migrate_aggregate(
-        encoded, TARGET, [BROKEN], SQLiteResolver(db), maintenance_mode=False
-    )
-    assert first.failure is not None
-    assert retry.failure == first.failure
-    assert db.execute("SELECT aggregate_bytes FROM aggregates").fetchone()[0] == encoded
-    return first.failure.code
+def quarantine_broken_migration(db):
+    event_id = "input-complete-1"
+    db.execute("BEGIN IMMEDIATE")
+    try:
+        blocked = db.execute(
+            "SELECT failure_code FROM blocked_inbox WHERE event_id=?", (event_id,)
+        ).fetchone()
+        if blocked:
+            db.rollback()
+            return "blocked:" + blocked[0]
+        encoded = db.execute(
+            "SELECT aggregate_bytes FROM aggregates WHERE root_instance_id='order-100'"
+        ).fetchone()[0]
+        aggregate_digest = json.loads(encoded)["aggregate_state_digest"]
+        result = ds.migrate_aggregate(
+            encoded, TARGET, [BROKEN], SQLiteResolver(db), maintenance_mode=False
+        )
+        assert result.failure is not None
+        assert db.execute(
+            "SELECT aggregate_bytes FROM aggregates WHERE root_instance_id='order-100'"
+        ).fetchone()[0] == encoded
+        code = result.failure.code
+        db.execute(
+            "INSERT INTO blocked_inbox VALUES(?,?,?)",
+            (event_id, "order-100", code),
+        )
+        db.execute(
+            "INSERT INTO quarantine VALUES(?,?,?)",
+            ("order-100", aggregate_digest, code),
+        )
+        db.execute(
+            "INSERT INTO migration_failure_audit VALUES(?,?,?,?,?)",
+            (event_id, "order-100", aggregate_digest, code, json.dumps([BROKEN])),
+        )
+        db.commit()
+        return code
+    except Exception:
+        db.rollback()
+        raise
 
 
 def migrate_and_complete(db):
@@ -439,6 +478,10 @@ def migrate_and_complete(db):
         if previous:
             db.rollback()
             return f"duplicate:{previous[0]}:{previous[1]}"
+        blocked = db.execute(
+            "SELECT failure_code FROM blocked_inbox WHERE event_id=?",
+            ("input-complete-1",),
+        ).fetchone()
         encoded = db.execute("SELECT aggregate_bytes FROM aggregates").fetchone()[0]
         restored = ds.restore_aggregate(encoded, cache)
         result = ds.migrate_and_dispatch(
@@ -457,6 +500,13 @@ def migrate_and_complete(db):
                 "INSERT INTO migration_audit VALUES(?,?,?)",
                 ("order-100", int(audit["migration_sequence"]),
                  json.dumps(audit, sort_keys=True)),
+            )
+        if blocked:
+            db.execute(
+                "DELETE FROM blocked_inbox WHERE event_id=?", ("input-complete-1",)
+            )
+            db.execute(
+                "DELETE FROM quarantine WHERE root_instance_id='order-100'"
             )
         db.commit()
         return f"{result.status}:{result.disposition}"
@@ -479,6 +529,11 @@ def inspect(db):
         "inbox": db.execute("SELECT COUNT(*) FROM inbox").fetchone()[0],
         "outbox": db.execute("SELECT COUNT(*) FROM outbox").fetchone()[0],
         "audits": db.execute("SELECT COUNT(*) FROM migration_audit").fetchone()[0],
+        "blocked": db.execute("SELECT COUNT(*) FROM blocked_inbox").fetchone()[0],
+        "quarantined": db.execute("SELECT COUNT(*) FROM quarantine").fetchone()[0],
+        "failure_audits": db.execute(
+            "SELECT COUNT(*) FROM migration_failure_audit"
+        ).fetchone()[0],
     }
 
 
@@ -492,17 +547,27 @@ def scenario(db):
         db, "submit", "input-submit-1", {"order_id": "order-100"}
     ) == "duplicate:running:handled"
     assert inspect(db) == before
-    assert broken_migration(db) == "migration_totality_failure"
+    assert quarantine_broken_migration(db) == "migration_totality_failure"
+    quarantined = inspect(db)
+    assert quarantined["aggregate_state_digest"] == before["aggregate_state_digest"]
+    assert quarantined["blocked"] == 1
+    assert quarantined["quarantined"] == 1
+    assert quarantined["failure_audits"] == 1
+    assert quarantine_broken_migration(db) == "blocked:migration_totality_failure"
+    assert inspect(db) == quarantined
     assert migrate_and_complete(db) == "completed:handled"
     final = inspect(db)
     assert final["machine_version"] == "2"
     assert final["migration_sequence"] == "1"
     assert final["inbox"] == 2 and final["outbox"] == 1 and final["audits"] == 1
+    assert final["blocked"] == 0 and final["quarantined"] == 0
+    assert final["failure_audits"] == 1
     assert migrate_and_complete(db) == "duplicate:completed:handled"
     assert inspect(db) == final
     print(
         "restored=v1; duplicate=ignored; outbox=1; "
-        "missing_state=migration_totality_failure; migrated=v2; status=completed"
+        "quarantined=migration_totality_failure; released=trusted-route; "
+        "migrated=v2; status=completed"
     )
 
 
@@ -523,7 +588,7 @@ def main():
         "duplicate": lambda: "duplicate=" + dispatch_once(
             db, "submit", "input-submit-1", {"order_id": "order-100"}
         ),
-        "check-broken": lambda: "migration=" + broken_migration(db),
+        "check-broken": lambda: "migration=" + quarantine_broken_migration(db),
         "complete": lambda: "status=" + migrate_and_complete(db),
         "inspect": lambda: json.dumps(inspect(db), indent=2, sort_keys=True),
         "scenario": lambda: scenario(db),
@@ -570,17 +635,27 @@ Before migration, inspection reports machine version `1`, migration sequence `0`
 active state `awaiting_fulfillment`, one inbox record, and one outbox intent. The
 duplicate does not call the engine or add rows.
 
-`check-broken` is a pure deterministic migration preview and retry. It deliberately
-does not model the permanent-failure quarantine, blocked-inbox, or failure-audit host
-flow from specification section 16.12. The incomplete descriptor fails twice with
-`migration_totality_failure`, and the aggregate bytes remain exactly unchanged.
+`check-broken` presents `input-complete-1` with the incomplete route. The pure engine
+result is only `migration_totality_failure` and returns no candidate or audit. In the
+same SQLite transaction, the host proves the aggregate bytes are unchanged, records
+the inbox item as blocked, adds separate quarantine metadata, and appends a failure
+audit. Repeating `check-broken` reads that blocked row and does not call the engine.
 
-The first `complete` command uses the explicit descriptor to migrate and dispatch in
-one transaction. Final inspection reports version `2`, migration sequence `1`, two
-inbox records, one outbox row, and one audit record. The second `complete` command
-returns `status=duplicate:completed:handled` from the locked inbox row. It never reads
-or migrates the aggregate, and the following inspection proves that aggregate digest,
-outbox, audit, and inbox counts remain unchanged.
+These records are deliberately separate:
+
+- quarantine is host metadata, not an aggregate lifecycle status;
+- blocked inbox means the input is neither acknowledged nor successfully committed;
+- failure audit records the permanent route failure, not a successful engine migration
+  audit or engine fault.
+
+The first `complete` command represents installing the corrected trusted route. It
+migrates and dispatches in one transaction, moves the blocked item into the committed
+inbox, clears quarantine, and retains the failure audit for operators. Final inspection
+reports version `2`, migration sequence `1`, two committed inbox records, one outbox
+row, one successful migration audit, one retained failure audit, and no blocked or
+quarantined row. The second `complete` command returns
+`status=duplicate:completed:handled` from the locked committed inbox row. It never
+reads or migrates the aggregate.
 
 SQLite makes this local transaction atomic. It does **not** make delivery to a payment
 provider, broker, or other process exactly once. Dispatch the outbox after commit,
@@ -591,8 +666,9 @@ commits.
 
 The database host is narrated once in Python so the transaction boundary stays clear.
 This complete Rust trace uses the released Rust API with the same two definitions and
-descriptors. It independently restores the canonical artifact, observes the same
-failure, applies the same remap, and reaches the same result.
+descriptors. It independently restores the canonical artifact, observes the same pure
+failure, applies the same remap, and reaches the same result. Host quarantine remains a
+database concern rather than a Rust engine result.
 
 <!-- determa-example: persistence-tutorial/rust/Cargo.toml -->
 ```toml
@@ -696,7 +772,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let broken = migrate_aggregate(
         &encoded,
         &MigrationRequest {
-            migration_route: vec![bad_digest],
+            migration_route: vec![bad_digest.clone()],
             target_validated_bundle_fingerprint: target.fingerprint.clone(),
             maintenance_mode: false,
         },
@@ -705,6 +781,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .expect_err("missing active-state mapping");
     assert_eq!(broken.code.as_str(), "migration_totality_failure");
+    let broken_retry = migrate_aggregate(
+        &encoded,
+        &MigrationRequest {
+            migration_route: vec![bad_digest],
+            target_validated_bundle_fingerprint: target.fingerprint.clone(),
+            maintenance_mode: false,
+        },
+        &resolver,
+        &ResourceLimits::default(),
+    )
+    .expect_err("the same incomplete route fails again");
+    assert_eq!(broken_retry, broken);
 
     let preview = migrate_aggregate(
         &encoded,
@@ -758,7 +846,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!(
         "restored=v1; duplicate=ignored; outbox=1; \
-         missing_state=migration_totality_failure; migrated=v2; status=completed"
+         pure_failure=migration_totality_failure; migrated=v2; status=completed"
     );
     Ok(())
 }
@@ -770,10 +858,16 @@ Run it:
 cargo run --quiet --manifest-path rust/Cargo.toml -- .
 ```
 
-Both programs print:
+The Python host prints:
 
 ```text
-restored=v1; duplicate=ignored; outbox=1; missing_state=migration_totality_failure; migrated=v2; status=completed
+restored=v1; duplicate=ignored; outbox=1; quarantined=migration_totality_failure; released=trusted-route; migrated=v2; status=completed
+```
+
+The Rust engine trace prints:
+
+```text
+restored=v1; duplicate=ignored; outbox=1; pure_failure=migration_totality_failure; migrated=v2; status=completed
 ```
 
 ## 8. Inspect and recover safely
@@ -806,7 +900,8 @@ order demonstrated by conformance cases
 [108](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/108-migration-retry-and-rollback), and
 [109](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/109-migration-then-dispatch).
 
-Package attachments, variable/history/component/owned-runtime transforms, chained
-routes, terminal maintenance migration, resource-limit vectors, occurrence-local
-transform binding, and large decimal identity projections remain reference-level
-behavior rather than claims of this tutorial.
+Continue with the
+[persistence and migration reference lab](persistence-migration-reference.md) for
+package attachments, variable/history/component/owned-runtime transforms, chained
+routes, terminal maintenance migration, resource limits, occurrence-local transform
+binding, and large decimal identity projections.

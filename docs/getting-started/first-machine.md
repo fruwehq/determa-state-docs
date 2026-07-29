@@ -219,8 +219,13 @@ pseudocode.
 
 ## Next
 
-The remaining format-1 features are being added in focused chapters. See the
-[coverage status](../reference/coverage.md) for the exact plan.
+Continue through [core statecharts](../guides/core-statecharts.md), [CEL and
+actions](../guides/cel-and-actions.md), [components and spawning](../guides/components-and-spawning.md),
+and [effects, faults, and hosting](../guides/effects-faults-hosting.md). Finish with the
+[SQLite persistence tutorial](../guides/persistence-and-migration.md) and its
+[advanced migration reference lab](../guides/persistence-migration-reference.md).
+The [coverage status](../reference/coverage.md) maps the complete released format-1
+surface.
 
 Normative references:
 [bundle grammar §4](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#4-bundle-grammar),

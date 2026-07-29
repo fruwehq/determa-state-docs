@@ -32,10 +32,16 @@ and atomic fault rollback through matching Python and Rust traces.
 Use [components and owned instances](guides/components-and-spawning.md) when
 one machine must coordinate isolated reusable or dynamically created runtimes.
 
-Finish the released format-1 tutorial with
+Continue with
 [effects, faults, inspection, and hosting](guides/effects-faults-hosting.md). It
 explains public effect intents, correlation, deterministic results, terminal states,
 and the boundary between the portable core and host infrastructure.
+
+Finish the released format-1 progression with the
+[SQLite persistence and migration tutorial](guides/persistence-and-migration.md), then
+use the [advanced persistence reference lab](guides/persistence-migration-reference.md)
+for packages, complete transforms, terminal maintenance, deterministic failure
+handling, resource limits, and lossless large identities.
 
 ## What is portable?
 
@@ -43,6 +49,7 @@ The portable core is a pure foreground state transform. Your application supplie
 input envelope and owns the returned state and emissions. Databases, queues, timers,
 brokers, and schedulers belong to the host around that core.
 
-The [coverage status](reference/coverage.md) shows what is complete and what remains
-planned. Normative details always come from the
+The [coverage status](reference/coverage.md) maps every released specification section
+and core case to its guide or a specific non-user-facing classification. Normative
+details always come from the
 [v0.1.0 specification](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md).
