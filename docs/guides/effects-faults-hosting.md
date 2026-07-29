@@ -635,9 +635,10 @@ state, no disposition, and no new emissions.
 The in-memory aggregate can be inspected for identities, status, active configuration,
 variables, ownership, history, counters, and fault records. This is an abstract
 logical-state API. Determa State 0.1.0 also defines portable aggregate serialization,
-restoration, and definition migration. Those released features are planned for the
-focused [persistence and migration tutorial](persistence-and-migration.md) and remain
-outside this chapter.
+restoration, and definition migration. Build the database-backed host in the
+[persistence and migration tutorial](persistence-and-migration.md), then run packages,
+complete transforms, terminal maintenance, and security limits in the
+[persistence reference lab](persistence-migration-reference.md).
 
 ## Keep host responsibilities outside the bundle
 

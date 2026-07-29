@@ -44,13 +44,15 @@ Use `make serve` to preview the site locally.
 
 ## Status
 
-Issue [#1](https://github.com/fruwehq/determa-state-docs/issues/1) tracks complete
-format-1 tutorial coverage. The machine-readable [`coverage.yaml`](coverage.yaml)
-distinguishes covered, planned, and deliberately non-user-facing material.
+The released format-1 user-facing surface is taught and executed across the progressive
+guides. The machine-readable [`coverage.yaml`](coverage.yaml) inventories every
+normative section and core conformance case as covered or deliberately
+non-user-facing.
 
-Persistence and definition migration are released in State 0.1.0 and remain to be
-taught in documentation [issue #7](https://github.com/fruwehq/determa-state-docs/issues/7).
-Portable package imports are not part of format 1 and are not documented as available.
+Persistence and definition migration include a beginner SQLite walkthrough and an
+advanced 105-vector Python/Rust reference lab. Aggregate packages are supported as
+content-addressed transport; portable package imports in machine definitions remain
+unsupported.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before changing examples or coverage.
 

@@ -9,7 +9,6 @@ pinned Determa State 0.1.0 revisions.
 Each entry is:
 
 - **covered** when an existing chapter explains or executes it;
-- **planned** when an open child issue owns its future chapter;
 - **non-user-facing** when it is specification or test-suite machinery rather than a
   behavior to teach.
 
@@ -23,10 +22,13 @@ The current tutorial covers the first guarded foreground machine,
 [effects, faults, inspection, and hosting](../guides/effects-faults-hosting.md).
 The [persistence and migration tutorial](../guides/persistence-and-migration.md)
 adds the portable aggregate, content-addressed definition registry, SQLite
-inbox/state/outbox transaction, deleted-state failure, and explicit lazy remap.
+inbox/state/outbox transaction, deterministic quarantine, deleted-state failure, and
+explicit lazy remap. The
+[persistence reference lab](../guides/persistence-migration-reference.md) executes all
+105 released Python and Rust persistence vectors and teaches package transport,
+variable/history/component/owned-runtime transforms, exact multi-descriptor routes,
+terminal maintenance migration, failure completeness, resource limits,
+occurrence-local binding, and large decimal identities.
 
-Advanced package transport, variable/history/component/owned-runtime transforms,
-multi-descriptor routes, terminal maintenance migration, and resource-limit vectors
-remain planned under
-[issue #7](https://github.com/fruwehq/determa-state-docs/issues/7) because the focused
-tutorial does not execute them.
+There are no planned entries. Aggregate package transport is covered; portable package
+imports in machine definitions remain unsupported.

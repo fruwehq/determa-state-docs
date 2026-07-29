@@ -53,6 +53,8 @@ nav:
       - CEL and actions: guides/cel-and-actions.md
       - Components and spawning: guides/components-and-spawning.md
       - Effects, faults, and hosting: guides/effects-faults-hosting.md
-      - Persistence and migration: guides/persistence-and-migration.md
+      - Persistence and migration:
+          - SQLite tutorial: guides/persistence-and-migration.md
+          - Reference lab: guides/persistence-migration-reference.md
   - Reference:
       - Coverage status: reference/coverage.md

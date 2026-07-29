@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Iterable
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -13,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import tomllib
+from urllib.parse import unquote, urlsplit
 
 import determa.state as determa_state
 from jsonschema import Draft202012Validator
@@ -84,19 +86,72 @@ LANGUAGE_BY_SUFFIX = {
     ".yml": "yaml",
     ".py": "python",
     ".rs": "rust",
+    ".sh": "sh",
     ".toml": "toml",
 }
-PERSISTENCE_MIGRATION_CHAPTER = "docs/guides/persistence-and-migration.md"
-PERSISTENCE_MIGRATION_SPECIFICATION = {"16.11"}
-PERSISTENCE_MIGRATION_CASES = {
-    "94-aggregate-wire-round-trip",
-    "96-definition-resolution",
-    "98-unchanged-definition-resume",
-    "100-explicit-active-state-remap",
-    "101-deleted-active-state-totality",
-    "106-counter-and-identity-preservation",
-    "108-migration-retry-and-rollback",
-    "109-migration-then-dispatch",
+PERSISTENCE_MIGRATION_SPECIFICATION_BY_CHAPTER = {
+    "docs/guides/persistence-and-migration.md": {"16.11"},
+    "docs/guides/persistence-migration-reference.md": {
+        "16",
+        "16.1",
+        "16.2",
+        "16.3",
+        "16.4",
+        "16.5",
+        "16.6",
+        "16.7",
+        "16.8",
+        "16.9",
+        "16.10",
+        "16.12",
+        "16.13",
+        "16.14",
+    },
+}
+PERSISTENCE_MIGRATION_CASES_BY_CHAPTER = {
+    "docs/guides/persistence-and-migration.md": {
+        "94-aggregate-wire-round-trip",
+        "96-definition-resolution",
+        "98-unchanged-definition-resume",
+        "100-explicit-active-state-remap",
+        "101-deleted-active-state-totality",
+        "106-counter-and-identity-preservation",
+        "108-migration-retry-and-rollback",
+        "109-migration-then-dispatch",
+    },
+    "docs/guides/persistence-migration-reference.md": {
+        "95-aggregate-wire-rejection",
+        "97-aggregate-package-attachments",
+        "99-compatible-definition-upgrade",
+        "102-variable-migration",
+        "103-history-migration",
+        "104-component-migration",
+        "105-owned-runtime-migration",
+        "107-migration-chain",
+        "110-completed-terminal-migration",
+        "111-faulted-terminal-migration",
+        "112-migration-security-limits",
+        "113-migration-failure-completeness",
+        "114-occurrence-local-transform-binding",
+        "115-target-identity-decimal-projections",
+    },
+}
+PERSISTENCE_MIGRATION_SPECIFICATION_ANCHORS = {
+    "16": "16-portable-persistence-and-definition-migration",
+    "16.1": "161-independent-artifact-identities",
+    "16.2": "162-canonical-values-and-aggregate-encoding",
+    "16.3": "163-complete-root-ownership-aggregate",
+    "16.4": "164-immutable-identity-and-mutable-definition-binding",
+    "16.5": "165-content-addressed-definition-registry",
+    "16.6": "166-aggregate-shape-fingerprint",
+    "16.7": "167-immutable-declarative-migration-descriptors",
+    "16.8": "168-exact-route-and-migration-algorithm",
+    "16.9": "169-total-transform-matrix",
+    "16.10": "1610-terminal-aggregates",
+    "16.11": "1611-lazy-transactional-host-ordering",
+    "16.12": "1612-failure-rollback-quarantine-and-audit",
+    "16.13": "1613-package-transport",
+    "16.14": "1614-security-and-resource-limits",
 }
 COMPONENTS_AND_SPAWNING_SPECIFICATION = {"7", "7.1", "7.2", "7.3"}
 COMPONENTS_AND_SPAWNING_CASES = {
@@ -211,15 +266,25 @@ def load_yaml(path: Path) -> object:
     return yaml_loader().load(path.read_text())
 
 
-def run(*args: str, cwd: Path | None = None) -> str:
+def run(
+    *args: str,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> str:
     completed = subprocess.run(
         args,
         cwd=cwd,
-        check=True,
+        env=env,
+        check=False,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     )
+    if completed.returncode != 0:
+        raise ValueError(
+            f"command failed ({completed.returncode}): {' '.join(args)}\n"
+            f"{completed.stdout.strip()}"
+        )
     return completed.stdout.strip()
 
 
@@ -274,7 +339,7 @@ def check_versions(source_root: Path) -> tuple[dict[str, object], dict[str, Path
         )
         if dirty:
             raise ValueError(f"{name} source checkout has local changes:\n{dirty}")
-        paths[name] = path
+        paths[name] = path.resolve()
 
     if (paths["specification"] / "VERSION").read_text().strip() != state_version:
         raise ValueError("specification VERSION drift")
@@ -401,6 +466,14 @@ def check_coverage(
         cases,
         "conformance",
     )
+    planned = [
+        f"{label}:{require_map(entry, f'{label} entry').get(key)}"
+        for label, key in (("specification", "id"), ("conformance", "case"))
+        for entry in require_list(coverage.get(label), f"{label} coverage")
+        if require_map(entry, f"{label} entry").get("status") == "planned"
+    ]
+    if planned:
+        raise ValueError(f"released documentation still has planned coverage: {planned}")
     check_core_statecharts_coverage(coverage)
     print(f"coverage: {len(spec_sections)} spec sections, {len(cases)} core cases")
 
@@ -579,38 +652,67 @@ def check_effects_faults_hosting_coverage(coverage: dict[str, object]) -> None:
 
 def check_persistence_migration_coverage(coverage: dict[str, object]) -> None:
     assignments = (
-        ("specification", "id", PERSISTENCE_MIGRATION_SPECIFICATION),
-        ("conformance", "case", PERSISTENCE_MIGRATION_CASES),
+        (
+            "specification",
+            "id",
+            PERSISTENCE_MIGRATION_SPECIFICATION_BY_CHAPTER,
+        ),
+        ("conformance", "case", PERSISTENCE_MIGRATION_CASES_BY_CHAPTER),
     )
-    for label, key, expected in assignments:
+    for label, key, expected_by_chapter in assignments:
         entries = require_list(coverage.get(label), f"{label} coverage")
-        mapped = {
-            require_map(entry, f"{label} entry")[key]
-            for entry in entries
-            if require_map(entry, f"{label} entry").get("status") == "covered"
-            and require_map(entry, f"{label} entry").get("chapter")
-            == PERSISTENCE_MIGRATION_CHAPTER
-        }
-        if mapped != expected:
-            raise ValueError(
-                f"persistence/migration {label} mapping mismatch; "
-                f"expected={sorted(expected)}, actual={sorted(mapped)}"
-            )
-    chapter = (ROOT / PERSISTENCE_MIGRATION_CHAPTER).read_text()
+        for chapter, expected in expected_by_chapter.items():
+            mapped = {
+                require_map(entry, f"{label} entry")[key]
+                for entry in entries
+                if require_map(entry, f"{label} entry").get("status") == "covered"
+                and require_map(entry, f"{label} entry").get("chapter") == chapter
+            }
+            if mapped != expected:
+                raise ValueError(
+                    f"persistence/migration {label} mapping mismatch in {chapter}; "
+                    f"expected={sorted(expected)}, actual={sorted(mapped)}"
+                )
+
     state_version = coverage["state_version"]
-    for case in PERSISTENCE_MIGRATION_CASES:
-        url = (
-            "https://github.com/fruwehq/determa-state-conformance/tree/"
-            f"v{state_version}/conformance/core/{case}"
-        )
-        if chapter.count(url) != 1:
-            raise ValueError(
-                f"persistence/migration conformance link must occur once: {case}"
+    for chapter_path, identifiers in (
+        PERSISTENCE_MIGRATION_SPECIFICATION_BY_CHAPTER.items()
+    ):
+        chapter = (ROOT / chapter_path).read_text()
+        for identifier in identifiers:
+            url = (
+                "https://github.com/fruwehq/determa-state-spec/blob/"
+                f"v{state_version}/SPEC.md#"
+                f"{PERSISTENCE_MIGRATION_SPECIFICATION_ANCHORS[identifier]}"
             )
+            if chapter.count(url) != 1:
+                raise ValueError(
+                    "persistence/migration specification link must occur once in "
+                    f"{chapter_path}: {identifier}"
+                )
+    for chapter_path, cases in PERSISTENCE_MIGRATION_CASES_BY_CHAPTER.items():
+        chapter = (ROOT / chapter_path).read_text()
+        for case in cases:
+            url = (
+                "https://github.com/fruwehq/determa-state-conformance/tree/"
+                f"v{state_version}/conformance/core/{case}"
+            )
+            if chapter.count(url) != 1:
+                raise ValueError(
+                    "persistence/migration conformance link must occur once in "
+                    f"{chapter_path}: {case}"
+                )
+
+    specification_count = sum(
+        len(identifiers)
+        for identifiers in PERSISTENCE_MIGRATION_SPECIFICATION_BY_CHAPTER.values()
+    )
+    case_count = sum(
+        len(cases) for cases in PERSISTENCE_MIGRATION_CASES_BY_CHAPTER.values()
+    )
     print(
         "persistence/migration coverage: "
-        f"{len(PERSISTENCE_MIGRATION_SPECIFICATION)} spec sections, "
-        f"{len(PERSISTENCE_MIGRATION_CASES)} core cases"
+        f"{specification_count} spec sections, {case_count} core cases"
     )
 
 
@@ -734,6 +836,53 @@ def extract_examples(destination: Path) -> list[Path]:
     return extracted
 
 
+def check_local_links() -> None:
+    markdown = MarkdownIt("commonmark")
+    checked = 0
+    for document in sorted((ROOT / "docs").rglob("*.md")):
+        for token in markdown.parse(document.read_text()):
+            if token.type != "inline" or token.children is None:
+                continue
+            for child in token.children:
+                if child.type != "link_open":
+                    continue
+                href = child.attrGet("href")
+                if not href:
+                    continue
+                parsed = urlsplit(href)
+                if parsed.scheme or parsed.netloc or not parsed.path:
+                    continue
+                target = (document.parent / unquote(parsed.path)).resolve()
+                try:
+                    target.relative_to(ROOT.resolve())
+                except ValueError as error:
+                    raise ValueError(
+                        f"local link escapes the repository: {document}: {href}"
+                    ) from error
+                if not target.exists():
+                    raise ValueError(f"broken local link: {document}: {href}")
+                checked += 1
+    print(f"links: {checked} local targets exist")
+
+
+def check_extracted_syntax(extracted: Iterable[Path]) -> None:
+    shell_scripts = [path for path in extracted if path.suffix == ".sh"]
+    for path in shell_scripts:
+        run("sh", "-n", str(path))
+    python_scripts = [path for path in extracted if path.suffix == ".py"]
+    if python_scripts:
+        run(
+            sys.executable,
+            "-m",
+            "py_compile",
+            *(str(path) for path in python_scripts),
+        )
+    print(
+        f"syntax: {len(shell_scripts)} shell and "
+        f"{len(python_scripts)} Python examples"
+    )
+
+
 def check_bundles(extracted: Iterable[Path], schema_path: Path) -> None:
     schema = json.loads(schema_path.read_text())
     Draft202012Validator.check_schema(schema)
@@ -771,7 +920,7 @@ def check_bundles(extracted: Iterable[Path], schema_path: Path) -> None:
     )
 
 
-def run_traces(destination: Path) -> None:
+def run_traces(destination: Path, conformance: Path) -> None:
     traces = [
         (
             destination / "python" / "first_counter.py",
@@ -915,9 +1064,14 @@ def run_traces(destination: Path) -> None:
     print("traces: Python and Rust agree on effects/faults/hosting")
 
     persistence_root = destination / "persistence-tutorial"
-    persistence_expected = (
+    persistence_python_expected = (
         "restored=v1; duplicate=ignored; outbox=1; "
-        "missing_state=migration_totality_failure; migrated=v2; status=completed"
+        "quarantined=migration_totality_failure; released=trusted-route; "
+        "migrated=v2; status=completed"
+    )
+    persistence_rust_expected = (
+        "restored=v1; duplicate=ignored; outbox=1; "
+        "pure_failure=migration_totality_failure; migrated=v2; status=completed"
     )
     persistence_python_output = run(
         sys.executable,
@@ -935,15 +1089,88 @@ def run_traces(destination: Path) -> None:
         str(persistence_root),
     )
     if (
-        persistence_python_output != persistence_expected
-        or persistence_rust_output != persistence_expected
+        persistence_python_output != persistence_python_expected
+        or persistence_rust_output != persistence_rust_expected
     ):
         raise ValueError(
             "persistence/migration trace mismatch: "
             f"python={persistence_python_output!r}, "
             f"rust={persistence_rust_output!r}"
         )
-    print("traces: Python and Rust agree on persistence/migration")
+    print("traces: Python host and Rust engine persistence paths passed")
+
+    reference_output = run(
+        sys.executable,
+        str(destination / "persistence-reference" / "inspect_vectors.py"),
+        str(conformance),
+    )
+    reference_expected = (
+        "105 vectors; package=trusted transport; transforms=total and local; "
+        "terminal=preserved; limits=deterministic; decimals=lossless"
+    )
+    if reference_output != reference_expected:
+        raise ValueError(
+            f"persistence reference inspection mismatch: {reference_output!r}"
+        )
+    print("persistence reference: all 105 vector properties inspected")
+
+
+def run_released_persistence_gates(paths: dict[str, Path]) -> None:
+    conformance = paths["conformance"]
+    specification = paths["specification"]
+    python = paths["python"]
+    rust = paths["rust"]
+
+    run(
+        sys.executable,
+        str(conformance / "scripts" / "validate_conformance.py"),
+        "--spec-root",
+        str(specification),
+        cwd=conformance,
+    )
+    environment = os.environ.copy()
+    environment["DETERMA_CONFORMANCE_DIR"] = str(conformance)
+    environment["DETERMA_SPEC_DIR"] = str(specification)
+    run(
+        sys.executable,
+        "-m",
+        "pytest",
+        str(python / "conformance" / "test_conformance.py::test_persistence_vectors"),
+        "-q",
+        cwd=ROOT,
+        env=environment,
+    )
+
+    rust_copy = ROOT / ".cache" / "rust-persistence-source"
+    if rust_copy.exists():
+        shutil.rmtree(rust_copy)
+    shutil.copytree(
+        rust,
+        rust_copy,
+        ignore=shutil.ignore_patterns(".git"),
+    )
+    conformance_link = rust_copy / "conformance-suite"
+    if conformance_link.exists():
+        shutil.rmtree(conformance_link)
+    conformance_link.symlink_to(conformance, target_is_directory=True)
+    cargo_environment = os.environ.copy()
+    cargo_environment["CARGO_TARGET_DIR"] = str(
+        ROOT / ".cache" / "rust-persistence-target-v2"
+    )
+    run(
+        "cargo",
+        "test",
+        "--quiet",
+        "--manifest-path",
+        str(rust_copy / "Cargo.toml"),
+        "--test",
+        "persistence_conformance",
+        env=cargo_environment,
+    )
+    print(
+        "released persistence gates: conformance artifacts and all 105 vectors "
+        "passed in Python and Rust"
+    )
 
 
 def main() -> None:
@@ -967,14 +1194,17 @@ def main() -> None:
     check_cel_and_actions_coverage(coverage)
     check_effects_faults_hosting_coverage(coverage)
     check_persistence_migration_coverage(coverage)
+    check_local_links()
     with tempfile.TemporaryDirectory(prefix="determa-examples-") as temporary:
         destination = Path(temporary)
         extracted = extract_examples(destination)
+        check_extracted_syntax(extracted)
         check_bundles(
             extracted,
             paths["specification"] / "schema" / "machine.schema.json",
         )
-        run_traces(destination)
+        run_traces(destination, paths["conformance"])
+    run_released_persistence_gates(paths)
     print("validation: passed")
 
 
