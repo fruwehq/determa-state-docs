@@ -1,9 +1,9 @@
-# Determa State examples
+# Determa State documentation
 
-Beginner-friendly, runnable tutorials for
+The manual, beginner-friendly tutorial, and documentation website for
 [Determa State](https://github.com/fruwehq/determa-state-spec).
 
-The tutorials currently target synchronized Determa State **0.0.7** and the numeric
+The tutorials currently target synchronized Determa State **0.1.0** and the numeric
 `format: 1` grammar. Start with
 [Your first machine](docs/getting-started/first-machine.md).
 
@@ -18,9 +18,12 @@ Every chapter is ordinary Markdown:
   are never maintained as duplicate authored copies.
 
 This repository explains and demonstrates Determa State. The
-[specification](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md) and
-[conformance suite](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7)
+[specification](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md) and
+[conformance suite](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0)
 remain normative.
+
+Independent, fully working real-world applications live in
+[`fruwehq/determa-state-examples`](https://github.com/fruwehq/determa-state-examples).
 
 ## Validate locally
 
@@ -41,12 +44,12 @@ Use `make serve` to preview the site locally.
 
 ## Status
 
-Issue [#1](https://github.com/fruwehq/determa-state-examples/issues/1) tracks complete
+Issue [#1](https://github.com/fruwehq/determa-state-docs/issues/1) tracks complete
 format-1 tutorial coverage. The machine-readable [`coverage.yaml`](coverage.yaml)
 distinguishes covered, planned, and deliberately non-user-facing material.
 
-Persistence and definition migration are blocked on
-[determa-state-spec#51](https://github.com/fruwehq/determa-state-spec/issues/51).
+Persistence and definition migration are released in State 0.1.0 and remain to be
+taught in documentation [issue #7](https://github.com/fruwehq/determa-state-docs/issues/7).
 Portable package imports are not part of format 1 and are not documented as available.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before changing examples or coverage.

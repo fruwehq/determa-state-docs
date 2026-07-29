@@ -1,19 +1,23 @@
-# AGENTS.md - determa-state-examples
+# AGENTS.md - determa-state-docs
 
 Guidance for coding agents working in this repository.
 
 ## Repository role
 
-This repository contains the living, beginner-friendly tutorials and runnable examples
-for Determa State. Ordinary Markdown under `docs/` is the single authored source for
-both GitHub viewing and the MkDocs Material static site.
+This repository contains the Determa State manual, living beginner-friendly tutorial,
+tutorial-generated examples, and documentation website. Ordinary Markdown under
+`docs/` is the single authored source for both GitHub viewing and the MkDocs Material
+static site.
+
+Independent, fully working real-world applications belong in
+`fruwehq/determa-state-examples`, not this repository.
 
 This repository is explanatory, not normative. The `determa-state-spec` specification
 and applicable `determa-state-conformance` core cases decide portable behavior.
 
 ## Current target
 
-- Determa State synchronized version: `0.0.7`
+- Determa State synchronized version: `0.1.0`
 - machine grammar: numeric `format: 1`
 - exact source revisions: `sources.lock.yaml`
 
@@ -46,7 +50,8 @@ actual core conformance case at the pinned revisions.
   name an existing chapter. Planned entries must name an open implementation issue.
 - Normative text belongs in `determa-state-spec`, not here. Link to it and explain it
   in beginner language.
-- Persistence/migration content remains blocked on `determa-state-spec#51`.
+- Persistence/migration content is released in State 0.1.0 and tracked for tutorial
+  implementation by issue #7.
 - Package-import content remains unsupported until a portable import contract exists.
 
 ## Gates

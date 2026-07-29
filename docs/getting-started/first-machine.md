@@ -51,7 +51,7 @@ type errors before the machine runs.
 Install the released engine:
 
 ```sh
-python -m pip install determa-state==0.0.7
+python -m pip install determa-state==0.1.0
 ```
 
 The complete program is below. `create` returns the initial state. `dispatch` returns
@@ -151,7 +151,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.0.7"
+determa-state = "=0.1.0"
 ```
 
 The Rust program uses the same machine file and asserts the same count and
@@ -223,7 +223,7 @@ The remaining format-1 features are being added in focused chapters. See the
 [coverage status](../reference/coverage.md) for the exact plan.
 
 Normative references:
-[bundle grammar §4](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md#4-bundle-grammar),
-[CEL §5](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md#5-static-validation-and-cel),
+[bundle grammar §4](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#4-bundle-grammar),
+[CEL §5](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#5-static-validation-and-cel),
 and
-[dispatch §6](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md#6-event-and-transition-semantics).
+[dispatch §6](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#6-event-and-transition-semantics).

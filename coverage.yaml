@@ -1,4 +1,4 @@
-state_version: "0.0.7"
+state_version: "0.1.0"
 
 specification:
   - id: "0"
@@ -135,7 +135,22 @@ specification:
     reason: The conformance delivery plan is repository governance rather than a machine-authoring feature.
   - id: "15"
     status: non_user_facing
-    reason: This repository implements the future-example plan; the section is not runtime behavior.
+    reason: The roadmap belongs to the separate real-world examples repository and is not tutorial or runtime behavior.
+  - { id: "16", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.1", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.2", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.3", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.4", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.5", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.6", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.7", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.8", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.9", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.10", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.11", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.12", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.13", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { id: "16.14", status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
 
 conformance:
   - { case: 01-guarded-leaf, status: covered, chapter: docs/getting-started/first-machine.md }
@@ -226,3 +241,25 @@ conformance:
   - { case: 91-component-host-input-rejection, status: covered, chapter: docs/guides/components-and-spawning.md }
   - { case: 92-faulted-root-component-precedence, status: covered, chapter: docs/guides/effects-faults-hosting.md }
   - { case: 93-optional-correlation, status: covered, chapter: docs/guides/effects-faults-hosting.md }
+  - { case: 94-aggregate-wire-round-trip, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 95-aggregate-wire-rejection, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 96-definition-resolution, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 97-aggregate-package-attachments, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 98-unchanged-definition-resume, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 99-compatible-definition-upgrade, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 100-explicit-active-state-remap, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 101-deleted-active-state-totality, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 102-variable-migration, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 103-history-migration, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 104-component-migration, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 105-owned-runtime-migration, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 106-counter-and-identity-preservation, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 107-migration-chain, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 108-migration-retry-and-rollback, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 109-migration-then-dispatch, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 110-completed-terminal-migration, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 111-faulted-terminal-migration, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 112-migration-security-limits, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 113-migration-failure-completeness, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 114-occurrence-local-transform-binding, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }
+  - { case: 115-target-identity-decimal-projections, status: planned, chapter: docs/guides/persistence-and-migration.md, issue: "https://github.com/fruwehq/determa-state-docs/issues/7" }

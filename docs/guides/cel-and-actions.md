@@ -4,7 +4,7 @@ Determa State uses [CEL](https://cel.dev/) for guards and computed action values
 The machine file remains data: the engine parses and type-checks every expression when
 the bundle loads, then evaluates only the expressions selected by an event.
 
-This chapter uses the closed portable CEL profile from Determa State 0.0.7. It does not
+This chapter uses the closed portable CEL profile from Determa State 0.1.0. It does not
 use host functions or implementation-specific CEL extensions.
 
 ## Start with ordered guards
@@ -607,7 +607,7 @@ and a root fault is terminal.
 Install the pinned engine:
 
 ```sh
-python -m pip install determa-state==0.0.7
+python -m pip install determa-state==0.1.0
 ```
 
 <!-- determa-example: python/cel_actions.py -->
@@ -892,7 +892,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.0.7"
+determa-state = "=0.1.0"
 ```
 
 <!-- determa-example: rust/cel-actions/src/main.rs -->
@@ -1302,24 +1302,24 @@ language traces. The code above is the tested source, not pseudocode.
 ## Coverage
 
 This chapter covers the format-1 structured-action and CEL rules linked below. The
-matching Determa State v0.0.7 conformance cases are:
+matching Determa State v0.1.0 conformance cases are:
 
-- [12 guarded list](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/12-guarded-list)
-- [17 action fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/17-action-fault)
-- [61 expression map order](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/61-expression-map-order)
-- [64 dynamic target expression order](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/64-dynamic-target-expression-order)
-- [65 portable CEL profile](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/65-portable-cel-profile)
-- [66 CEL profile rejections](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/66-cel-profile-rejections)
-- [68 CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/68-cel-and-nonabsorbed-error)
-- [69 CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/69-cel-or-nonabsorbed-error)
-- [70 dynamic target list order](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/70-dynamic-target-list-order)
-- [71 reversed CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/71-cel-reversed-and-nonabsorbed-error)
-- [72 reversed CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/72-cel-reversed-or-nonabsorbed-error)
-- [79 missing refresh field](https://github.com/fruwehq/determa-state-conformance/tree/v0.0.7/conformance/core/79-missing-refresh-field)
+- [12 guarded list](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/12-guarded-list)
+- [17 action fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/17-action-fault)
+- [61 expression map order](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/61-expression-map-order)
+- [64 dynamic target expression order](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/64-dynamic-target-expression-order)
+- [65 portable CEL profile](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/65-portable-cel-profile)
+- [66 CEL profile rejections](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/66-cel-profile-rejections)
+- [68 CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/68-cel-and-nonabsorbed-error)
+- [69 CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/69-cel-or-nonabsorbed-error)
+- [70 dynamic target list order](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/70-dynamic-target-list-order)
+- [71 reversed CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/71-cel-reversed-and-nonabsorbed-error)
+- [72 reversed CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/72-cel-reversed-or-nonabsorbed-error)
+- [79 missing refresh field](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/79-missing-refresh-field)
 
 Normative references:
-[structured actions §4.8](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md#48-structured-actions),
-[static validation and CEL §5](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md#5-static-validation-and-cel),
-[portable CEL profile](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md#portable-cel-profile),
+[structured actions §4.8](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#48-structured-actions),
+[static validation and CEL §5](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#5-static-validation-and-cel),
+[portable CEL profile](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#portable-cel-profile),
 and
-[faults §10](https://github.com/fruwehq/determa-state-spec/blob/v0.0.7/SPEC.md#10-faults-and-envelope-disposition).
+[faults §10](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#10-faults-and-envelope-disposition).

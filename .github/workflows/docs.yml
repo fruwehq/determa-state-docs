@@ -25,28 +25,28 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-spec
-          ref: 09c717a40c75b99612e54d764b5f1bdfa4b94f96
+          ref: c1635d74e6a216301a8986d37be8ce7e7111dfd7
           path: .sources/determa-state-spec
 
       - name: Check out conformance
         uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-conformance
-          ref: 74e477087fd31561600aacf652cccae571a5ea9a
+          ref: 600523ca08c3b8a6ee790439a32dc4ce47f71b95
           path: .sources/determa-state-conformance
 
       - name: Check out Python engine
         uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-python
-          ref: 4958ac8dd514bce43d3e7ed70dbbbb7164fc713b
+          ref: 7b17d788b48049648e7e463aa3d35ba13dc1aa6e
           path: .sources/determa-state-python
 
       - name: Check out Rust engine
         uses: actions/checkout@v7
         with:
           repository: fruwehq/determa-state-rust
-          ref: c026dc0d6bd82138c1e5042d90252f78a7dea6bf
+          ref: d17480c8b281dcd17953f59afcf6b5d23ff44efd
           path: .sources/determa-state-rust
 
       - name: Set up Python
