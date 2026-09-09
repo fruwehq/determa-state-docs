@@ -21,8 +21,9 @@ and applicable `determa-state-conformance` core cases decide portable behavior.
 - machine grammar: numeric `format: 1`
 - exact source revisions: `sources.lock.yaml`
 
-The coverage matrix must contain every normative specification section and every
-actual core conformance case at the pinned revisions.
+The coverage matrix must contain every normative specification section, every actual
+core conformance case, and every released execution-checkpoint profile case directory
+at the pinned revisions.
 
 ## Working rules
 
@@ -68,7 +69,7 @@ strict site-build validation. CI is the same contract.
 ## Repository map
 
 - `docs/`: authored tutorial chapters.
-- `coverage.yaml`: spec-section and core-case disposition.
+- `coverage.yaml`: spec-section, core-case, and released profile-case disposition.
 - `sources.lock.yaml`: immutable upstream source identities.
 - `STATE_VERSION`: synchronized State version displayed and checked.
 - `scripts/`: extraction and validation tools.

@@ -322,3 +322,10 @@ This guide explains the released execution-checkpoint contract:
 - [§17.12 exact guarantee boundary](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1712-exact-guarantee-boundary)
 - [§17.13 cluster checkpoint composition](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1713-cluster-checkpoint-composition)
 - [§17.14 future timer durability](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1714-future-timer-durability)
+
+The released optional profile groups its low-level vectors into three user-facing
+scenarios:
+
+- [checkpoint-01 delivery lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/profiles/execution-checkpoint/checkpoint-01-delivery-lifecycle)
+- [checkpoint-02 outbox lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/profiles/execution-checkpoint/checkpoint-02-outbox-lifecycle)
+- [checkpoint-03 retention and root lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/profiles/execution-checkpoint/checkpoint-03-retention-and-root-lifecycle)

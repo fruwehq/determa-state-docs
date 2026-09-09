@@ -31,8 +31,8 @@ same extracted machine and assert the same observable trace.
 
 ## Update coverage
 
-Every pinned normative section and core conformance case has exactly one entry in
-`coverage.yaml`.
+Every pinned normative section, core conformance case, and released
+execution-checkpoint profile case directory has exactly one entry in `coverage.yaml`.
 
 - `covered`: an existing chapter demonstrably explains or executes the item.
 - `planned`: the item is assigned to an existing chapter path and open child issue.

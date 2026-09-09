@@ -279,3 +279,8 @@ conformance:
   - { case: 114-occurrence-local-transform-binding, status: covered, chapter: docs/guides/persistence-migration-reference.md }
   - { case: 115-target-identity-decimal-projections, status: covered, chapter: docs/guides/persistence-migration-reference.md }
   - { case: 116-legacy-format-policy, status: covered, chapter: docs/guides/core-statecharts.md }
+
+execution_checkpoint_profile:
+  - { case: checkpoint-01-delivery-lifecycle, status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { case: checkpoint-02-outbox-lifecycle, status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { case: checkpoint-03-retention-and-root-lifecycle, status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }

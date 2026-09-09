@@ -37,8 +37,9 @@ make sources
 make check
 ```
 
-`make check` verifies the pinned source versions, coverage totality, YAML 1.2 parsing,
-JSON Schema validity, Python and Rust traces, and the strict MkDocs build.
+`make check` verifies the pinned source versions, specification/core/profile coverage
+totality, YAML 1.2 parsing, JSON Schema validity, Python and Rust traces, and the strict
+MkDocs build.
 
 Use `make serve` to preview the site locally.
 
@@ -46,8 +47,8 @@ Use `make serve` to preview the site locally.
 
 The released format-1 user-facing surface is taught and executed across the progressive
 guides. The machine-readable [`coverage.yaml`](coverage.yaml) inventories every
-normative section and core conformance case as covered or deliberately
-non-user-facing.
+normative section, core conformance case, and released execution-checkpoint profile
+case as covered or deliberately non-user-facing.
 
 Persistence and definition migration include a durable execution-checkpoint tutorial,
 a lower-level SQLite transaction walkthrough, and an advanced 108-vector Python/Rust
