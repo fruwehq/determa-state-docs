@@ -54,6 +54,7 @@ nav:
       - Components and spawning: guides/components-and-spawning.md
       - Effects, faults, and hosting: guides/effects-faults-hosting.md
       - Persistence and migration:
+          - Durable checkpoint host: guides/execution-checkpoint-hosting.md
           - SQLite tutorial: guides/persistence-and-migration.md
           - Reference lab: guides/persistence-migration-reference.md
   - Reference:

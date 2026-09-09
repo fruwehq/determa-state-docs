@@ -4,7 +4,7 @@ Determa State runs the same state machine definition consistently across languag
 You define behavior once in YAML or JSON, then use a foreground engine call to create
 and advance a machine.
 
-This tutorial targets **Determa State 0.1.0** and numeric **`format: 1`**.
+This tutorial targets **Determa State 0.2.0** and numeric **`format: 1`**.
 
 This site owns the manual and progressive tutorial. Independent, fully working
 real-world applications live in
@@ -38,6 +38,7 @@ explains public effect intents, correlation, deterministic results, terminal sta
 and the boundary between the portable core and host infrastructure.
 
 Finish the released format-1 progression with the
+[durable execution-checkpoint tutorial](guides/execution-checkpoint-hosting.md) and
 [SQLite persistence and migration tutorial](guides/persistence-and-migration.md), then
 use the [advanced persistence reference lab](guides/persistence-migration-reference.md)
 for packages, complete transforms, terminal maintenance, deterministic failure
@@ -52,4 +53,4 @@ brokers, and schedulers belong to the host around that core.
 The [coverage status](reference/coverage.md) maps every released specification section
 and core case to its guide or a specific non-user-facing classification. Normative
 details always come from the
-[v0.1.0 specification](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md).
+[v0.2.0 specification](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md).

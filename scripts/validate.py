@@ -30,7 +30,7 @@ ISSUE_URL = re.compile(
 )
 CONFORMANCE_CASE_LINK = re.compile(
     r"https://github\.com/fruwehq/determa-state-conformance/tree/"
-    r"v([^/]+)/conformance/core/([0-9]{2}-[A-Za-z0-9-]+)"
+    r"v([^/]+)/conformance/core/([0-9]+-[A-Za-z0-9-]+)"
 )
 CORE_STATECHARTS_CHAPTER = "docs/guides/core-statecharts.md"
 CORE_STATECHARTS_SPECIFICATION_SECTIONS = (
@@ -79,6 +79,7 @@ CORE_STATECHARTS_CONFORMANCE_CASES = (
     "62-parsed-value-model",
     "63-entry-stop-interruption",
     "84-choice-stop-chain",
+    "116-legacy-format-policy",
 )
 LANGUAGE_BY_SUFFIX = {
     ".json": "json",
@@ -106,6 +107,23 @@ PERSISTENCE_MIGRATION_SPECIFICATION_BY_CHAPTER = {
         "16.12",
         "16.13",
         "16.14",
+    },
+    "docs/guides/execution-checkpoint-hosting.md": {
+        "17",
+        "17.1",
+        "17.2",
+        "17.3",
+        "17.4",
+        "17.5",
+        "17.6",
+        "17.7",
+        "17.8",
+        "17.9",
+        "17.10",
+        "17.11",
+        "17.12",
+        "17.13",
+        "17.14",
     },
 }
 PERSISTENCE_MIGRATION_CASES_BY_CHAPTER = {
@@ -152,6 +170,21 @@ PERSISTENCE_MIGRATION_SPECIFICATION_ANCHORS = {
     "16.12": "1612-failure-rollback-quarantine-and-audit",
     "16.13": "1613-package-transport",
     "16.14": "1614-security-and-resource-limits",
+    "17": "17-portable-execution-checkpoints-and-hosting-adapters",
+    "17.1": "171-scope-and-compatibility",
+    "17.2": "172-closed-checkpoint-artifact",
+    "17.3": "173-durable-operation-receipts-and-replay",
+    "17.4": "174-unified-pending-deliveries",
+    "17.5": "175-maintenance-migration-operations",
+    "17.6": "176-durable-outbox-lifecycle",
+    "17.7": "177-migration-audit-and-canonical-ordering",
+    "17.8": "178-replay-retention-and-root-lifecycle",
+    "17.9": "179-transaction-and-concurrency-ordering",
+    "17.10": "1710-execution-store-registration-and-resolution",
+    "17.11": "1711-execution-store-capabilities-and-composed-host-profiles",
+    "17.12": "1712-exact-guarantee-boundary",
+    "17.13": "1713-cluster-checkpoint-composition",
+    "17.14": "1714-future-timer-durability",
 }
 COMPONENTS_AND_SPAWNING_SPECIFICATION = {"7", "7.1", "7.2", "7.3"}
 COMPONENTS_AND_SPAWNING_CASES = {
@@ -253,6 +286,7 @@ EFFECTS_FAULTS_HOSTING_SPECIFICATION_ANCHORS = {
     "12": "12-inspection-and-visualization",
     "13": "13-deliberately-unsupported-in-format-1",
 }
+EXECUTION_CHECKPOINT_CHAPTER = "docs/guides/execution-checkpoint-hosting.md"
 
 
 def yaml_loader() -> YAML:
@@ -412,6 +446,19 @@ def conformance_cases(conformance: Path) -> list[str]:
     )
 
 
+def execution_checkpoint_profile_cases(conformance: Path) -> list[str]:
+    profile = (
+        conformance
+        / "conformance"
+        / "profiles"
+        / "execution-checkpoint"
+    )
+    return sorted(
+        (path.name for path in profile.iterdir() if path.is_dir()),
+        key=lambda value: value.encode("utf-8"),
+    )
+
+
 def check_dispositions(
     entries: Iterable[object],
     key: str,
@@ -454,6 +501,7 @@ def check_coverage(
 ) -> None:
     spec_sections = specification_sections(specification)
     cases = conformance_cases(conformance)
+    execution_checkpoint_cases = execution_checkpoint_profile_cases(conformance)
     check_dispositions(
         require_list(coverage.get("specification"), "specification coverage"),
         "id",
@@ -466,16 +514,69 @@ def check_coverage(
         cases,
         "conformance",
     )
+    check_dispositions(
+        require_list(
+            coverage.get("execution_checkpoint_profile"),
+            "execution-checkpoint profile coverage",
+        ),
+        "case",
+        execution_checkpoint_cases,
+        "execution-checkpoint profile",
+    )
     planned = [
         f"{label}:{require_map(entry, f'{label} entry').get(key)}"
-        for label, key in (("specification", "id"), ("conformance", "case"))
+        for label, key in (
+            ("specification", "id"),
+            ("conformance", "case"),
+            ("execution_checkpoint_profile", "case"),
+        )
         for entry in require_list(coverage.get(label), f"{label} coverage")
         if require_map(entry, f"{label} entry").get("status") == "planned"
     ]
     if planned:
         raise ValueError(f"released documentation still has planned coverage: {planned}")
     check_core_statecharts_coverage(coverage)
-    print(f"coverage: {len(spec_sections)} spec sections, {len(cases)} core cases")
+    print(
+        f"coverage: {len(spec_sections)} spec sections, {len(cases)} core cases, "
+        f"{len(execution_checkpoint_cases)} execution-checkpoint profile cases"
+    )
+
+
+def check_execution_checkpoint_profile_coverage(
+    coverage: dict[str, object], conformance: Path
+) -> None:
+    cases = execution_checkpoint_profile_cases(conformance)
+    entries = {
+        require_map(entry, "execution-checkpoint profile entry")["case"]: require_map(
+            entry, "execution-checkpoint profile entry"
+        )
+        for entry in require_list(
+            coverage.get("execution_checkpoint_profile"),
+            "execution-checkpoint profile coverage",
+        )
+    }
+    chapter = (ROOT / EXECUTION_CHECKPOINT_CHAPTER).read_text()
+    state_version = coverage.get("state_version")
+    if not isinstance(state_version, str):
+        raise ValueError("coverage state_version must be a string")
+    for case in cases:
+        entry = entries[case]
+        if (
+            entry.get("status") != "covered"
+            or entry.get("chapter") != EXECUTION_CHECKPOINT_CHAPTER
+        ):
+            raise ValueError(
+                f"execution-checkpoint profile case is not covered: {case}"
+            )
+        url = (
+            "https://github.com/fruwehq/determa-state-conformance/tree/"
+            f"v{state_version}/conformance/profiles/execution-checkpoint/{case}"
+        )
+        if chapter.count(url) != 1:
+            raise ValueError(
+                "execution-checkpoint profile link must occur once: " f"{case}"
+            )
+    print(f"execution-checkpoint coverage: {len(cases)} profile cases")
 
 
 def check_components_and_spawning_coverage(coverage: dict[str, object]) -> None:
@@ -555,10 +656,13 @@ def check_cel_and_actions_coverage(coverage: dict[str, object]) -> None:
             f"actual={sorted(mapped_cases)}"
         )
     chapter = (ROOT / chapter_path).read_text()
+    state_version = coverage.get("state_version")
+    if not isinstance(state_version, str):
+        raise ValueError("coverage state_version must be a string")
     for case in CEL_AND_ACTIONS_CASES:
         link = (
             "https://github.com/fruwehq/determa-state-conformance/"
-            f"tree/v0.1.0/conformance/core/{case}"
+            f"tree/v{state_version}/conformance/core/{case}"
         )
         if f"]({link})" not in chapter:
             raise ValueError(f"CEL/actions chapter does not link conformance {case}")
@@ -1099,20 +1203,37 @@ def run_traces(destination: Path, conformance: Path) -> None:
         )
     print("traces: Python host and Rust engine persistence paths passed")
 
+    checkpoint_root = destination / "checkpoint-tutorial"
+    checkpoint_output = run(
+        sys.executable,
+        str(checkpoint_root / "app.py"),
+        str(checkpoint_root / "counter.yaml"),
+        str(checkpoint_root / "state.db"),
+    )
+    checkpoint_expected = (
+        "revision=2; count=4; receipts=2; "
+        "pending=0; outbox=1; replay=committed"
+    )
+    if checkpoint_output != checkpoint_expected:
+        raise ValueError(
+            f"execution checkpoint tutorial mismatch: {checkpoint_output!r}"
+        )
+    print("execution checkpoint tutorial: durable accept, restart, and replay passed")
+
     reference_output = run(
         sys.executable,
         str(destination / "persistence-reference" / "inspect_vectors.py"),
         str(conformance),
     )
     reference_expected = (
-        "105 vectors; package=trusted transport; transforms=total and local; "
+        "108 vectors; package=trusted transport; transforms=total and local; "
         "terminal=preserved; limits=deterministic; decimals=lossless"
     )
     if reference_output != reference_expected:
         raise ValueError(
             f"persistence reference inspection mismatch: {reference_output!r}"
         )
-    print("persistence reference: all 105 vector properties inspected")
+    print("persistence reference: all 108 vector properties inspected")
 
 
 def run_released_persistence_gates(paths: dict[str, Path]) -> None:
@@ -1136,6 +1257,24 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
         "-m",
         "pytest",
         str(python / "conformance" / "test_conformance.py::test_persistence_vectors"),
+        "-q",
+        cwd=ROOT,
+        env=environment,
+    )
+    run(
+        sys.executable,
+        "-m",
+        "pytest",
+        str(
+            python
+            / "conformance"
+            / "test_conformance.py::test_execution_checkpoint_profile"
+        ),
+        str(
+            python
+            / "conformance"
+            / "test_conformance.py::test_execution_checkpoint_artifact"
+        ),
         "-q",
         cwd=ROOT,
         env=environment,
@@ -1167,9 +1306,19 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
         "persistence_conformance",
         env=cargo_environment,
     )
+    run(
+        "cargo",
+        "test",
+        "--quiet",
+        "--manifest-path",
+        str(rust_copy / "Cargo.toml"),
+        "--test",
+        "checkpoint_conformance",
+        env=cargo_environment,
+    )
     print(
-        "released persistence gates: conformance artifacts and all 105 vectors "
-        "passed in Python and Rust"
+        "released persistence gates: all 108 persistence vectors and the complete "
+        "execution-checkpoint profile passed in Python and Rust"
     )
 
 
@@ -1194,6 +1343,7 @@ def main() -> None:
     check_cel_and_actions_coverage(coverage)
     check_effects_faults_hosting_coverage(coverage)
     check_persistence_migration_coverage(coverage)
+    check_execution_checkpoint_profile_coverage(coverage, paths["conformance"])
     check_local_links()
     with tempfile.TemporaryDirectory(prefix="determa-examples-") as temporary:
         destination = Path(temporary)
