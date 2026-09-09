@@ -342,12 +342,12 @@ The Rust program consumes the same bundle and asserts the same portable observat
 ```toml
 [package]
 name = "determa-effects-faults-hosting"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.1.0"
+determa-state = "=0.2.0"
 ```
 
 <!-- determa-example: rust/effects-faults-hosting/src/main.rs -->
@@ -634,8 +634,10 @@ state, no disposition, and no new emissions.
 
 The in-memory aggregate can be inspected for identities, status, active configuration,
 variables, ownership, history, counters, and fault records. This is an abstract
-logical-state API. Determa State 0.1.0 also defines portable aggregate serialization,
-restoration, and definition migration. Build the database-backed host in the
+logical-state API. Determa State 0.2.0 also defines portable aggregate serialization,
+restoration, definition migration, and optional durable execution checkpoints. Start
+with the [durable checkpoint host](execution-checkpoint-hosting.md), build the
+lower-level database-backed host in the
 [persistence and migration tutorial](persistence-and-migration.md), then run packages,
 complete transforms, terminal maintenance, and security limits in the
 [persistence reference lab](persistence-migration-reference.md).
@@ -660,8 +662,8 @@ and a delivered intent is not remote success.
 Format 1 deliberately has no native clocks, timers, sleeps, queues, retries,
 acknowledgements, deferrals, dead-letter store, implicit parallel broadcast, shared
 runtime variables, direct host-to-component delivery, cross-runtime transitions,
-remote or detached spawn, package imports, definition hot-swap, portable snapshot
-wire, standardized store/CLI protocol, root-fault recovery, root re-entry, distributed
+remote or detached spawn, package imports, implicit definition hot-swap,
+standardized cross-language store/CLI protocol, root-fault recovery, root re-entry, distributed
 exactly-once transaction, hard real-time guarantee, or standardized plugin
 configuration.
 
@@ -676,34 +678,34 @@ aggregate inspection instead of executable observers.
 
 The exact released specification sections explained here are:
 
-- [§9 deterministic identities and emissions](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#9-deterministic-identities-and-emissions);
-- [§10 faults and envelope disposition](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#10-faults-and-envelope-disposition);
-- [§10.1 engine faults](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#101-engine-faults);
-- [§10.2 contained runtime faults](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#102-contained-runtime-faults);
-- [§10.3 domain failures](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#103-domain-failures);
-- [§11 plugins and hosting](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#11-plugins-and-hosting);
-- [§11.1 queue plugins](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#111-queue-plugins);
-- [§11.2 timer extensions](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#112-timer-extensions);
-- [§11.3 external effects](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#113-external-effects);
-- [§11.4 hosting profiles](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#114-hosting-profiles);
-- [§12 inspection and visualization](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#12-inspection-and-visualization);
-- [§13 deliberately unsupported in format 1](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#13-deliberately-unsupported-in-format-1).
+- [§9 deterministic identities and emissions](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#9-deterministic-identities-and-emissions);
+- [§10 faults and envelope disposition](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#10-faults-and-envelope-disposition);
+- [§10.1 engine faults](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#101-engine-faults);
+- [§10.2 contained runtime faults](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#102-contained-runtime-faults);
+- [§10.3 domain failures](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#103-domain-failures);
+- [§11 plugins and hosting](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#11-plugins-and-hosting);
+- [§11.1 queue plugins](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#111-queue-plugins);
+- [§11.2 timer extensions](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#112-timer-extensions);
+- [§11.3 external effects](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#113-external-effects);
+- [§11.4 hosting profiles](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#114-hosting-profiles);
+- [§12 inspection and visualization](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#12-inspection-and-visualization);
+- [§13 deliberately unsupported in format 1](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#13-deliberately-unsupported-in-format-1).
 
 Released conformance examples:
 
-- [16 timer extension](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/16-timer-extension)
-- [18 domain failure](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/18-domain-failure)
-- [19 public event contract](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/19-public-event-contract)
-- [20 invalid public correlation](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/20-invalid-public-correlation)
-- [46 root boundary validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/46-root-boundary-validation)
-- [50 root fault terminal aggregate](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/50-root-fault-terminal-aggregate)
-- [67 bundle/state binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/67-bundle-state-binding)
-- [75 root initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/75-root-initialization-fault)
-- [76 invalid creation Unicode](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/76-invalid-create-unicode)
-- [77 invalid dispatch Unicode](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/77-invalid-dispatch-unicode)
-- [85 initialization emission rollback](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/85-initialization-emission-rollback)
-- [88 reserved payload validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/88-reserved-payload-validation)
-- [89 non-finite creation binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/89-nonfinite-creation-binding)
-- [90 host numeric normalization](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/90-host-numeric-normalization)
-- [92 faulted-root/component precedence](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/92-faulted-root-component-precedence)
-- [93 optional correlation](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/93-optional-correlation)
+- [16 timer extension](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/16-timer-extension)
+- [18 domain failure](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/18-domain-failure)
+- [19 public event contract](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/19-public-event-contract)
+- [20 invalid public correlation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/20-invalid-public-correlation)
+- [46 root boundary validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/46-root-boundary-validation)
+- [50 root fault terminal aggregate](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/50-root-fault-terminal-aggregate)
+- [67 bundle/state binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/67-bundle-state-binding)
+- [75 root initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/75-root-initialization-fault)
+- [76 invalid creation Unicode](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/76-invalid-create-unicode)
+- [77 invalid dispatch Unicode](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/77-invalid-dispatch-unicode)
+- [85 initialization emission rollback](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/85-initialization-emission-rollback)
+- [88 reserved payload validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/88-reserved-payload-validation)
+- [89 non-finite creation binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/89-nonfinite-creation-binding)
+- [90 host numeric normalization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/90-host-numeric-normalization)
+- [92 faulted-root/component precedence](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/92-faulted-root-component-precedence)
+- [93 optional correlation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/93-optional-correlation)

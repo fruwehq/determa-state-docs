@@ -69,7 +69,11 @@ def main() -> None:
         print(f"{name}: v{lock['state_version']}")
 
     planned_issues: dict[str, tuple[str, str, int]] = {}
-    for group in ("specification", "conformance"):
+    for group in (
+        "specification",
+        "conformance",
+        "execution_checkpoint_profile",
+    ):
         for entry in coverage[group]:
             if entry["status"] != "planned":
                 continue

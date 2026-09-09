@@ -51,7 +51,7 @@ type errors before the machine runs.
 Install the released engine:
 
 ```sh
-python -m pip install determa-state==0.1.0
+python -m pip install determa-state==0.2.0
 ```
 
 The complete program is below. `create` returns the initial state. `dispatch` returns
@@ -146,12 +146,12 @@ Create a small Cargo project with the released crate.
 ```toml
 [package]
 name = "determa-first-counter"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.1.0"
+determa-state = "=0.2.0"
 ```
 
 The Rust program uses the same machine file and asserts the same count and
@@ -228,7 +228,7 @@ The [coverage status](../reference/coverage.md) maps the complete released forma
 surface.
 
 Normative references:
-[bundle grammar §4](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#4-bundle-grammar),
-[CEL §5](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#5-static-validation-and-cel),
+[bundle grammar §4](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#4-bundle-grammar),
+[CEL §5](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#5-static-validation-and-cel),
 and
-[dispatch §6](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#6-event-and-transition-semantics).
+[dispatch §6](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#6-event-and-transition-semantics).
