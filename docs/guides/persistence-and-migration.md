@@ -5,8 +5,8 @@ It stores a portable aggregate, ignores a duplicate input, records an output int
 restarts between commands, and lazily upgrades a live order from machine version 1 to
 version 2.
 
-The tutorial uses Determa State 0.1.0 and numeric `format: 1`. The normative rules are
-in [specification section 16](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#16-portable-persistence-and-definition-migration).
+The tutorial uses Determa State 0.2.0 and numeric `format: 1`. The normative rules are
+in [specification section 16](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#16-portable-persistence-and-definition-migration).
 
 ## 1. Create an empty project
 
@@ -15,7 +15,7 @@ mkdir determa-persistence-tutorial
 cd determa-persistence-tutorial
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install determa-state==0.1.0
+python -m pip install determa-state==0.2.0
 mkdir -p rust/src
 ```
 
@@ -220,7 +220,7 @@ The host stores definitions and descriptors once under their content digests. An
 aggregate row stores only canonical aggregate bytes. One SQLite transaction owns the
 inbox decision, aggregate replacement, ordered outbox inserts, and migration audit.
 This implements the
-[lazy transactional host order in specification §16.11](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1611-lazy-transactional-host-ordering).
+[lazy transactional host order in specification §16.11](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1611-lazy-transactional-host-ordering).
 
 <!-- determa-example: persistence-tutorial/app.py -->
 ```python
@@ -688,12 +688,12 @@ database concern rather than a Rust engine result.
 ```toml
 [package]
 name = "determa-persistence-migration-tutorial"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.1.0"
+determa-state = "=0.2.0"
 serde_json = "1"
 ```
 
@@ -905,14 +905,14 @@ This focused example covers round-trip encoding, definition resolution, unchange
 restoration, explicit active-state remapping, deleted-state totality, counter and
 identity preservation, rollback, migration plus dispatch, and the host transaction
 order demonstrated by conformance cases
-[94](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/94-aggregate-wire-round-trip),
-[96](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/96-definition-resolution),
-[98](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/98-unchanged-definition-resume),
-[100](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/100-explicit-active-state-remap),
-[101](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/101-deleted-active-state-totality),
-[106](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/106-counter-and-identity-preservation),
-[108](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/108-migration-retry-and-rollback), and
-[109](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/109-migration-then-dispatch).
+[94](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/94-aggregate-wire-round-trip),
+[96](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/96-definition-resolution),
+[98](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/98-unchanged-definition-resume),
+[100](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/100-explicit-active-state-remap),
+[101](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/101-deleted-active-state-totality),
+[106](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/106-counter-and-identity-preservation),
+[108](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/108-migration-retry-and-rollback), and
+[109](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/109-migration-then-dispatch).
 
 Continue with the
 [persistence and migration reference lab](persistence-migration-reference.md) for

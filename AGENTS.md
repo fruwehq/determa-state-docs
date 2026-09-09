@@ -17,7 +17,7 @@ and applicable `determa-state-conformance` core cases decide portable behavior.
 
 ## Current target
 
-- Determa State synchronized version: `0.1.0`
+- Determa State synchronized version: `0.2.0`
 - machine grammar: numeric `format: 1`
 - exact source revisions: `sources.lock.yaml`
 
@@ -50,8 +50,8 @@ actual core conformance case at the pinned revisions.
   name an existing chapter. Planned entries must name an open implementation issue.
 - Normative text belongs in `determa-state-spec`, not here. Link to it and explain it
   in beginner language.
-- Persistence/migration content is released in State 0.1.0 and tracked for tutorial
-  implementation by issue #7.
+- Persistence, migration, and execution-checkpoint hosting are released in State 0.2.0
+  and taught in the corresponding guides.
 - Package-import content remains unsupported until a portable import contract exists.
 
 ## Gates

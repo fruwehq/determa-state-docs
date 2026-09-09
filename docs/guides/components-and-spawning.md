@@ -717,12 +717,12 @@ emission order, stale-target rejection, and final output.
 ```toml
 [package]
 name = "determa-components-spawning"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.1.0"
+determa-state = "=0.2.0"
 ```
 
 <!-- determa-example: rust/components-spawning/src/main.rs -->
@@ -1190,37 +1190,37 @@ portable lifecycle model:
 ## Coverage
 
 This chapter covers specification
-[§7](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#7-components-spawning-and-lifecycle),
-[§7.1](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#71-lifecycle-bound-components),
-[§7.2](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#72-owned-spawned-instances),
+[§7](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#7-components-spawning-and-lifecycle),
+[§7.1](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#71-lifecycle-bound-components),
+[§7.2](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#72-owned-spawned-instances),
 and
-[§7.3](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#73-runtime-and-aggregate-root-completion).
+[§7.3](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#73-runtime-and-aggregate-root-completion).
 
-The matching v0.1.0 conformance cases are:
+The matching v0.2.0 conformance cases are:
 
-- [09 parallel components](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/09-parallel-components)
-- [13 spawn completion](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/13-spawn-completion)
-- [14 explicit targets](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/14-explicit-targets)
-- [29 owned spawn](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/29-owned-spawn)
-- [30 owned spawn cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/30-owned-spawn-cancel)
-- [38 destroyed reference binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/38-destroyed-reference-binding)
-- [47 scoped owned-child lifetime](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/47-scoped-owned-child-lifetime)
-- [48 null cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/48-null-cancel)
-- [49 exit-action cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/49-exit-action-cancel)
-- [51 component initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/51-component-initialization-fault)
-- [52 spawned initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/52-spawned-initialization-fault)
-- [54 stale component target](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/54-stale-component-target)
-- [55 root owner target](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/55-root-owner-target)
-- [73 synchronous initialization cycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/73-synchronous-initialization-cycle)
-- [74 sibling cleanup order](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/74-sibling-cleanup-order)
-- [78 component external refresh](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/78-component-external-refresh)
-- [80 unbound owned child](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/80-unbound-owned-child)
-- [81 holder reference reuse](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/81-holder-reference-reuse)
-- [82 instance-reference target identity](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/82-instance-reference-target-identity)
-- [83 contained dynamic instance send](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/83-contained-dynamic-instance-send)
-- [86 initial component completion order](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/86-initial-component-completion-order)
-- [87 internal env target mode](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/87-internal-env-target-mode)
-- [91 component host-input rejection](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/91-component-host-input-rejection)
+- [09 parallel components](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/09-parallel-components)
+- [13 spawn completion](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/13-spawn-completion)
+- [14 explicit targets](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/14-explicit-targets)
+- [29 owned spawn](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/29-owned-spawn)
+- [30 owned spawn cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/30-owned-spawn-cancel)
+- [38 destroyed reference binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/38-destroyed-reference-binding)
+- [47 scoped owned-child lifetime](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/47-scoped-owned-child-lifetime)
+- [48 null cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/48-null-cancel)
+- [49 exit-action cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/49-exit-action-cancel)
+- [51 component initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/51-component-initialization-fault)
+- [52 spawned initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/52-spawned-initialization-fault)
+- [54 stale component target](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/54-stale-component-target)
+- [55 root owner target](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/55-root-owner-target)
+- [73 synchronous initialization cycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/73-synchronous-initialization-cycle)
+- [74 sibling cleanup order](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/74-sibling-cleanup-order)
+- [78 component external refresh](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/78-component-external-refresh)
+- [80 unbound owned child](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/80-unbound-owned-child)
+- [81 holder reference reuse](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/81-holder-reference-reuse)
+- [82 instance-reference target identity](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/82-instance-reference-target-identity)
+- [83 contained dynamic instance send](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/83-contained-dynamic-instance-send)
+- [86 initial component completion order](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/86-initial-component-completion-order)
+- [87 internal env target mode](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/87-internal-env-target-mode)
+- [91 component host-input rejection](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/91-component-host-input-rejection)
 
 Portable package imports and direct host-to-component input are deliberately not
 introduced here.

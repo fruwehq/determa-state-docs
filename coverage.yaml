@@ -1,4 +1,4 @@
-state_version: "0.1.0"
+state_version: "0.2.0"
 
 specification:
   - id: "0"
@@ -151,6 +151,21 @@ specification:
   - { id: "16.12", status: covered, chapter: docs/guides/persistence-migration-reference.md }
   - { id: "16.13", status: covered, chapter: docs/guides/persistence-migration-reference.md }
   - { id: "16.14", status: covered, chapter: docs/guides/persistence-migration-reference.md }
+  - { id: "17", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.1", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.2", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.3", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.4", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.5", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.6", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.7", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.8", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.9", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.10", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.11", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.12", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.13", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
+  - { id: "17.14", status: covered, chapter: docs/guides/execution-checkpoint-hosting.md }
 
 conformance:
   - { case: 01-guarded-leaf, status: covered, chapter: docs/getting-started/first-machine.md }
@@ -263,3 +278,4 @@ conformance:
   - { case: 113-migration-failure-completeness, status: covered, chapter: docs/guides/persistence-migration-reference.md }
   - { case: 114-occurrence-local-transform-binding, status: covered, chapter: docs/guides/persistence-migration-reference.md }
   - { case: 115-target-identity-decimal-projections, status: covered, chapter: docs/guides/persistence-migration-reference.md }
+  - { case: 116-legacy-format-policy, status: covered, chapter: docs/guides/core-statecharts.md }

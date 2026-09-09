@@ -5,7 +5,7 @@ nested phases, data with clear lifetimes, predictable entry and exit behavior, a
 way to resume interrupted work.
 
 This chapter builds those ideas in layers. Every complete file is extracted from this
-Markdown and run against Determa State 0.1.0 in both Python and Rust.
+Markdown and run against Determa State 0.2.0 in both Python and Rust.
 
 ## 1. Read a statechart from the outside in
 
@@ -466,7 +466,7 @@ use the YAML 1.2 core model narrowed to an acyclic JSON-compatible tree.
 Every current document must carry the numeric value `format: 1`. Omission, a quoted
 `"1"`, or any other value is `unsupported_format`; loaders never guess the nearest
 grammar. This format identifier is separate from the released package/specification
-version 0.1.0 and from each author's machine `version`.
+version 0.2.0 and from each author's machine `version`.
 
 Identifiers match `^[A-Za-z_][A-Za-z0-9_]*$`; namespaces are dot-separated
 identifiers. Every string in source, creation bindings, event envelopes, and logical
@@ -844,12 +844,12 @@ The Rust program uses the same four extracted YAML files and checks the same out
 ```toml
 [package]
 name = "determa-core-statecharts"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.1.0"
+determa-state = "=0.2.0"
 ```
 
 <!-- determa-example: rust/core-statecharts/src/main.rs -->
@@ -1249,55 +1249,56 @@ Before relying on a machine:
 ## 14. Conformance coverage
 
 The executable arbiter for these explanations is the pinned Determa State conformance
-suite. This chapter covers these exact v0.1.0 cases:
+suite. This chapter covers these exact v0.2.0 cases:
 
 - Hierarchy, initialization, scope, payloads, transitions, and external values:
-  [02-hierarchy-bubbling](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/02-hierarchy-bubbling),
-  [03-initial-action](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/03-initial-action),
-  [05-variable-scope](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/05-variable-scope),
-  [06-payload-typing](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/06-payload-typing),
-  [07-internal-external](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/07-internal-external),
-  [08-local-vs-external](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/08-local-vs-external), and
-  [15-external-env-refresh](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/15-external-env-refresh).
+  [02-hierarchy-bubbling](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/02-hierarchy-bubbling),
+  [03-initial-action](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/03-initial-action),
+  [05-variable-scope](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/05-variable-scope),
+  [06-payload-typing](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/06-payload-typing),
+  [07-internal-external](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/07-internal-external),
+  [08-local-vs-external](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/08-local-vs-external), and
+  [15-external-env-refresh](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/15-external-env-refresh).
 - Choices and reachability:
-  [23-choice](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/23-choice),
-  [24-choice-chain](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/24-choice-chain),
-  [25-choice-invalid](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/25-choice-invalid),
-  [26-unreachable](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/26-unreachable),
-  [27-dead-branch](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/27-dead-branch),
-  [28-reachable-ok](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/28-reachable-ok), and
-  [53-compound-choice-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/53-compound-choice-lifecycle).
+  [23-choice](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/23-choice),
+  [24-choice-chain](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/24-choice-chain),
+  [25-choice-invalid](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/25-choice-invalid),
+  [26-unreachable](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/26-unreachable),
+  [27-dead-branch](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/27-dead-branch),
+  [28-reachable-ok](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/28-reachable-ok), and
+  [53-compound-choice-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/53-compound-choice-lifecycle).
 - History, lifecycle, and transition boundaries:
-  [10-history-deep](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/10-history-deep),
-  [11-history-shallow](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/11-history-shallow),
-  [32-history-resume-restart](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/32-history-resume-restart),
-  [33-history-capture-timing](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/33-history-capture-timing),
-  [34-history-first-entry](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/34-history-first-entry),
-  [35-shallow-deep-history](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/35-shallow-deep-history),
-  [36-history-variable-reinitialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/36-history-variable-reinitialization),
-  [37-destroyed-variable-write](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/37-destroyed-variable-write),
-  [39-ancestor-internal-transition](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/39-ancestor-internal-transition),
-  [40-noncanonical-transitions](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/40-noncanonical-transitions),
-  [42-initial-history-rejection](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/42-initial-history-rejection),
-  [43-self-history-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/43-self-history-lifecycle),
-  [44-local-history](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/44-local-history), and
-  [45-proper-ancestor-target](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/45-proper-ancestor-target).
+  [10-history-deep](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/10-history-deep),
+  [11-history-shallow](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/11-history-shallow),
+  [32-history-resume-restart](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/32-history-resume-restart),
+  [33-history-capture-timing](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/33-history-capture-timing),
+  [34-history-first-entry](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/34-history-first-entry),
+  [35-shallow-deep-history](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/35-shallow-deep-history),
+  [36-history-variable-reinitialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/36-history-variable-reinitialization),
+  [37-destroyed-variable-write](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/37-destroyed-variable-write),
+  [39-ancestor-internal-transition](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/39-ancestor-internal-transition),
+  [40-noncanonical-transitions](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/40-noncanonical-transitions),
+  [42-initial-history-rejection](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/42-initial-history-rejection),
+  [43-self-history-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/43-self-history-lifecycle),
+  [44-local-history](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/44-local-history), and
+  [45-proper-ancestor-target](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/45-proper-ancestor-target).
 - Variable creation, defaults, parsing, and stop interruption:
-  [56-variable-initialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/56-variable-initialization),
-  [57-creation-binding-defaults](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/57-creation-binding-defaults),
-  [58-missing-creation-binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/58-missing-creation-binding),
-  [59-payload-default-materialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/59-payload-default-materialization),
-  [60-payload-default-validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/60-payload-default-validation),
-  [62-parsed-value-model](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/62-parsed-value-model),
-  [63-entry-stop-interruption](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/63-entry-stop-interruption), and
-  [84-choice-stop-chain](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/84-choice-stop-chain).
+  [56-variable-initialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/56-variable-initialization),
+  [57-creation-binding-defaults](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/57-creation-binding-defaults),
+  [58-missing-creation-binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/58-missing-creation-binding),
+  [59-payload-default-materialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/59-payload-default-materialization),
+  [60-payload-default-validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/60-payload-default-validation),
+  [62-parsed-value-model](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/62-parsed-value-model),
+  [63-entry-stop-interruption](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/63-entry-stop-interruption),
+  [84-choice-stop-chain](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/84-choice-stop-chain), and
+  [116-legacy-format-policy](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/116-legacy-format-policy).
 
 Normative references:
-[parsing and format identity §2](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#2-conformance-parsing-and-format-identity),
-[states §4.6](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#46-state-nodes),
-[transitions §4.7](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#47-transitions),
-[hierarchical dispatch §6.3](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#63-hierarchical-dispatch),
-[execution order §6.4](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#64-transition-execution-order),
-[choice and history §6.5](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#65-choice-and-history),
+[parsing and format identity §2](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#2-conformance-parsing-and-format-identity),
+[states §4.6](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#46-state-nodes),
+[transitions §4.7](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#47-transitions),
+[hierarchical dispatch §6.3](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#63-hierarchical-dispatch),
+[execution order §6.4](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#64-transition-execution-order),
+[choice and history §6.5](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#65-choice-and-history),
 and
-[stop interruption §6.6](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#66-stop-interruption).
+[stop interruption §6.6](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#66-stop-interruption).

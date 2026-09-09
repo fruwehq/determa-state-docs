@@ -2,11 +2,11 @@
 
 The [SQLite tutorial](persistence-and-migration.md) is the shortest path from an empty
 directory to a durable application. This lab is the next step. It executes every
-portable persistence and migration vector released with Determa State 0.1.0 and then
+portable persistence and migration vector released with Determa State 0.2.0 and then
 inspects the fixtures so you can see which property each group protects.
 
 The normative contract is
-[specification section 16](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#16-portable-persistence-and-definition-migration).
+[specification section 16](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#16-portable-persistence-and-definition-migration).
 This chapter explains that contract; it does not add new behavior.
 
 ## 1. Check prerequisites
@@ -15,7 +15,7 @@ You need:
 
 - Python 3.11 or newer;
 - Git and network access to clone the four immutable release sources; and
-- a Rust toolchain compatible with Determa State 0.1.0. The released repositories
+- a Rust toolchain compatible with Determa State 0.2.0. The released repositories
   validate with Rust 1.95.
 
 Check them before creating files:
@@ -37,12 +37,12 @@ cd determa-persistence-reference
 python3 -m venv .venv
 . .venv/bin/activate
 python -m pip install \
-  determa-state==0.1.0 pytest==8.4.2 ruamel.yaml==0.19.1
+  determa-state==0.2.0 pytest==8.4.2 ruamel.yaml==0.19.1
 ```
 
 Create the following script. It downloads the immutable released sources, checks their
 exact commits, runs the Python package's persistence vectors against the installed
-0.1.0 package, runs the Rust 0.1.0 crate's matching vectors, and finally runs the
+0.2.0 package, runs the Rust 0.2.0 crate's matching vectors, and finally runs the
 property inspector created in the next section.
 
 <!-- determa-example: persistence-reference/run.sh -->
@@ -93,7 +93,7 @@ chmod +x run.sh
 
 The two engine harnesses compare exact success bytes, aggregate values, audit arrays,
 resolver contents, emissions, dispositions, stable failure codes, and caller ownership
-for 105 vectors in cases 94 through 115. This is deliberately stronger than a smoke
+for 108 vectors in cases 94 through 115. This is deliberately stronger than a smoke
 test.
 
 ## 3. Inspect what the vectors prove
@@ -157,13 +157,17 @@ def variable_values(path: Path, suffix: str):
 
 directories = [case(number) for number in range(94, 116)]
 assert len(directories) == 22
-assert sum(len(vectors(number)) for number in range(94, 116)) == 105
+assert sum(len(vectors(number)) for number in range(94, 116)) == 108
 
-# Every pure failure returns one exact code and leaves the source artifact caller-owned.
+# Aggregate operations leave the source artifact caller-owned on every pure failure.
+# Descriptor-only decoding has no aggregate argument to return.
 for number in range(94, 116):
     for item in vectors(number):
         expected = item["expect"]
         if expected["result"] == "failure":
+            if item["operation"] == "decode_selected_migration_descriptor":
+                assert set(expected) == {"result", "code"}
+                continue
             assert set(expected) == {
                 "result",
                 "code",
@@ -192,6 +196,7 @@ assert wire_documents == {
     "malformed-float.json": "invalid_aggregate_state",
     "unknown-field.json": "invalid_aggregate_state",
     "unsupported-format.json": "unsupported_aggregate_state_format",
+    "legacy-0.0.6-snapshot.json": "unsupported_aggregate_state_format",
     "unsupported-schema-version.json": (
         "unsupported_aggregate_state_schema_version"
     ),
@@ -313,6 +318,13 @@ failure_codes = {
     item["expect"]["code"]
     for item in vectors(113)
 }
+legacy_descriptor = vector(
+    113, "legacy_snapshot_rejected_by_selected_descriptor_decoder"
+)
+assert legacy_descriptor["expect"] == {
+    "result": "failure",
+    "code": "unsupported_migration_descriptor_format",
+}
 assert failure_codes == {
     "invalid_migration_request",
     "migration_transform_fault",
@@ -380,7 +392,7 @@ assert activation == (
 )
 
 print(
-    "105 vectors; package=trusted transport; transforms=total and local; "
+    "108 vectors; package=trusted transport; transforms=total and local; "
     "terminal=preserved; limits=deterministic; decimals=lossless"
 )
 ```
@@ -394,99 +406,99 @@ Run it directly whenever you want the shorter, explanatory report:
 Expected output:
 
 ```text
-105 vectors; package=trusted transport; transforms=total and local; terminal=preserved; limits=deterministic; decimals=lossless
+108 vectors; package=trusted transport; transforms=total and local; terminal=preserved; limits=deterministic; decimals=lossless
 ```
 
 ## 4. Know the three independent identities
 
-[Section 16.1](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#161-independent-artifact-identities)
+[Section 16.1](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#161-independent-artifact-identities)
 separates the machine definition, aggregate, and migration descriptor. A definition
 fingerprint identifies normalized machine content. An aggregate digest identifies one
 complete ownership tree at one point in time. A descriptor digest identifies one
 immutable, declarative migration step.
 
-[Canonical encoding in §16.2](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#162-canonical-values-and-aggregate-encoding)
+[Canonical encoding in §16.2](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#162-canonical-values-and-aggregate-encoding)
 uses RFC 8785 JSON and tagged values. Integers and identity counters are canonical
 decimal strings, which is why the lab checks values above JavaScript's safe integer
 limit rather than accepting rounded numbers. Malformed relations, unknown fields,
 unsupported discriminators, and unsupported schema versions fail with exact codes;
 the input bytes remain caller-owned. See
-[case 95](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/95-aggregate-wire-rejection)
+[case 95](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/95-aggregate-wire-rejection)
 and
-[case 115](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/115-target-identity-decimal-projections).
+[case 115](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/115-target-identity-decimal-projections).
 
-[The complete aggregate in §16.3](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#163-complete-root-ownership-aggregate)
+[The complete aggregate in §16.3](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#163-complete-root-ownership-aggregate)
 contains the root, components, owned spawned descendants, variables, history, counters,
 faults, and nominal references. It is one transaction boundary. Do not store or advance
 an owned child independently.
 
 ## 5. Bind immutable identity to an approved definition
 
-[Section 16.4](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#164-immutable-identity-and-mutable-definition-binding)
+[Section 16.4](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#164-immutable-identity-and-mutable-definition-binding)
 keeps creation and runtime identity immutable while allowing `current_definition` to
 advance.
-[Section 16.5](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#165-content-addressed-definition-registry)
+[Section 16.5](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#165-content-addressed-definition-registry)
 requires the resolver to return the exact hash-valid, trusted artifact requested.
-[Section 16.6](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#166-aggregate-shape-fingerprint)
+[Section 16.6](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#166-aggregate-shape-fingerprint)
 distinguishes a compatible definition-only update from a state-bearing transform.
 
-[Case 99](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/99-compatible-definition-upgrade)
+[Case 99](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/99-compatible-definition-upgrade)
 shows the compatible path: runtime identity and logical state stay fixed while the
 definition binding, aggregate digest, migration sequence, and audit advance.
 
 ## 6. Treat migration as closed data
 
-[Descriptors in §16.7](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#167-immutable-declarative-migration-descriptors)
+[Descriptors in §16.7](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#167-immutable-declarative-migration-descriptors)
 are immutable data, not code. Their restricted CEL transforms cannot call Python,
 Rust, JavaScript, shell commands, plugins, files, clocks, networks, credentials, or
 author actions.
 
-[The route algorithm in §16.8](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#168-exact-route-and-migration-algorithm)
+[The route algorithm in §16.8](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#168-exact-route-and-migration-algorithm)
 uses exactly the ordered digest list supplied by deployment. It does not search for a
 newer or shorter route. Every intermediate candidate is validated in memory and only
 the final result may commit.
-[Case 107](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/107-migration-chain)
+[Case 107](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/107-migration-chain)
 checks exact no-op bytes, a two-hop audit, wrong ordering, missing routes, and cycles.
 
-[The total transform matrix in §16.9](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#169-total-transform-matrix)
+[The total transform matrix in §16.9](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#169-total-transform-matrix)
 requires every retained source occurrence and required target occurrence to be
 accounted for. The vectors demonstrate:
 
 - variable copy, transform, initialize, and destructive drop in
-  [case 102](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/102-variable-migration);
+  [case 102](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/102-variable-migration);
 - null, deep, and shallow history in
-  [case 103](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/103-history-migration);
+  [case 103](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/103-history-migration);
 - component placement and activation identity in
-  [case 104](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/104-component-migration);
+  [case 104](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/104-component-migration);
 - owned-runtime binding, lifetime holder, and nominal reference preservation in
-  [case 105](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/105-owned-runtime-migration); and
+  [case 105](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/105-owned-runtime-migration); and
 - independent rule application for repeated runtimes and activations in
-  [case 114](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/114-occurrence-local-transform-binding).
+  [case 114](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/114-occurrence-local-transform-binding).
 
 Rules read one immutable pre-descriptor snapshot. They cannot combine values from
 different runtimes or observe another rule's output.
 
 ## 7. Keep terminal aggregates terminal
 
-[Section 16.10](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1610-terminal-aggregates)
+[Section 16.10](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1610-terminal-aggregates)
 requires `maintenance_mode: true` for a non-empty terminal migration. The descriptor
 must preserve the matching terminal policy. A completed aggregate remains completed;
 a faulted aggregate preserves its diagnostic tree and fault anchors. Neither migration
 reactivates a runtime or emits an event.
 
-[Case 110](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/110-completed-terminal-migration)
+[Case 110](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/110-completed-terminal-migration)
 checks the completed path.
-[Case 111](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/111-faulted-terminal-migration)
+[Case 111](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/111-faulted-terminal-migration)
 checks fault preservation and policy rejection.
 
 ## 8. Separate pure failures from host quarantine
 
 The SQLite tutorial implements
-[the transactional ordering in §16.11](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1611-lazy-transactional-host-ordering):
+[the transactional ordering in §16.11](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1611-lazy-transactional-host-ordering):
 resolve immutable artifacts before the transaction, lock aggregate and inbox, migrate
 and dispatch once, then commit aggregate, inbox, outbox, and audit together.
 
-[Section 16.12](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1612-failure-rollback-quarantine-and-audit)
+[Section 16.12](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1612-failure-rollback-quarantine-and-audit)
 separates two layers:
 
 - the pure engine failure is only `{code}` and leaves the exact aggregate bytes with
@@ -496,18 +508,18 @@ separates two layers:
 
 Installing a corrected trusted route may release the blocked item. It does not erase
 the failure audit. This is not an engine fault, dead letter, or aggregate status.
-[Case 113](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/113-migration-failure-completeness)
+[Case 113](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/113-migration-failure-completeness)
 checks the closed failure surface; the SQLite guide checks the database transaction.
 
 ## 9. Move aggregates without inventing imports
 
-[Package transport in §16.13](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1613-package-transport)
+[Package transport in §16.13](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1613-package-transport)
 is an archive or transfer envelope containing one aggregate plus optional definition
 and descriptor attachments. Attachments must reproduce their digests, satisfy all
 cross-references, and seed a resolver with put-if-absent semantics. They never override
 an existing digest and are not part of the aggregate digest.
 
-[Case 97](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/97-aggregate-package-attachments)
+[Case 97](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/97-aggregate-package-attachments)
 checks integrity, duplicate attachments, unsupported package versions, resolver
 seeding, idempotency, and collision refusal. This transport does **not** enable package
 imports in machine YAML. Portable package imports remain unsupported format-1
@@ -515,12 +527,12 @@ semantics.
 
 ## 10. Set limits before loading untrusted artifacts
 
-[Section 16.14](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md#1614-security-and-resource-limits)
+[Section 16.14](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1614-security-and-resource-limits)
 requires digest checks, pinned trust, retained referenced definitions, and configurable
 limits for aggregate and artifact size, JSON shape, runtime/state/value counts, route
 and rule counts, and migration CEL work.
 
-[Case 112](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0/conformance/core/112-migration-security-limits)
+[Case 112](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/112-migration-security-limits)
 proves the minimum supported floors succeed and every lower configured dimension fails
 with `migration_resource_limit_exceeded`. Understated descriptor requirements fail;
 the engine never truncates a transform. Every failed vector returns no candidate or

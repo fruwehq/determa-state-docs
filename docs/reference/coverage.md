@@ -4,7 +4,7 @@
 is the machine-readable source of truth for tutorial coverage.
 
 It inventories every normative section and every actual core conformance case at the
-pinned Determa State 0.1.0 revisions.
+pinned Determa State 0.2.0 revisions.
 
 Each entry is:
 

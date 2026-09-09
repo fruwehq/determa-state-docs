@@ -3,7 +3,7 @@
 The manual, beginner-friendly tutorial, and documentation website for
 [Determa State](https://github.com/fruwehq/determa-state-spec).
 
-The tutorials currently target synchronized Determa State **0.1.0** and the numeric
+The tutorials currently target synchronized Determa State **0.2.0** and the numeric
 `format: 1` grammar. Start with
 [Your first machine](docs/getting-started/first-machine.md).
 
@@ -18,8 +18,8 @@ Every chapter is ordinary Markdown:
   are never maintained as duplicate authored copies.
 
 This repository explains and demonstrates Determa State. The
-[specification](https://github.com/fruwehq/determa-state-spec/blob/v0.1.0/SPEC.md) and
-[conformance suite](https://github.com/fruwehq/determa-state-conformance/tree/v0.1.0)
+[specification](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md) and
+[conformance suite](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0)
 remain normative.
 
 Independent, fully working real-world applications live in
@@ -49,10 +49,10 @@ guides. The machine-readable [`coverage.yaml`](coverage.yaml) inventories every
 normative section and core conformance case as covered or deliberately
 non-user-facing.
 
-Persistence and definition migration include a beginner SQLite walkthrough and an
-advanced 105-vector Python/Rust reference lab. Aggregate packages are supported as
-content-addressed transport; portable package imports in machine definitions remain
-unsupported.
+Persistence and definition migration include a durable execution-checkpoint tutorial,
+a lower-level SQLite transaction walkthrough, and an advanced 108-vector Python/Rust
+reference lab. Aggregate packages are supported as content-addressed transport;
+portable package imports in machine definitions remain unsupported.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before changing examples or coverage.
 
