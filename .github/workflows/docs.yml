@@ -45,5 +45,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/check_latest.py
 
+      - name: Verify publication hold
+        run: python scripts/check_publication_hold.py
+
       - name: Validate tutorials and build site
         run: make check

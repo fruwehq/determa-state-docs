@@ -16,6 +16,7 @@ site:
 	$(PYTHON) -m mkdocs build --strict
 
 check:
+	$(PYTHON) scripts/check_publication_hold.py
 	$(PYTHON) -m pytest -q tests/test_publication_hold.py
 	$(PYTHON) scripts/validate.py --source-root "$(SOURCE_ROOT)"
 	$(PYTHON) -m mkdocs build --strict

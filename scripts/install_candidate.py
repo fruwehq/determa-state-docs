@@ -3,6 +3,7 @@
 from pathlib import Path
 import subprocess
 import sys
+import tomllib
 
 from source_lock import load_lock
 
@@ -31,7 +32,29 @@ def main() -> None:
     ).strip()
     if dirty:
         raise SystemExit("candidate Python checkout has local changes")
-    subprocess.run([sys.executable, "-m", "pip", "install", str(source)], check=True)
+    project = tomllib.loads((source / "pyproject.toml").read_text())["project"]
+    dependencies = project.get("dependencies")
+    if not isinstance(dependencies, list) or not all(
+        isinstance(item, str) for item in dependencies
+    ):
+        raise SystemExit("candidate Python project needs static dependency declarations")
+    if dependencies:
+        subprocess.run([sys.executable, "-m", "pip", "install", *dependencies], check=True)
+    # PEP 610 records both the public repository and resolved commit for a VCS
+    # install. The validator also compares the installed bytes to this checkout.
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--no-cache-dir",
+            "--force-reinstall",
+            "--no-deps",
+            f"git+https://github.com/{lock['repositories']['python']['repository']}.git@{actual}",
+        ],
+        check=True,
+    )
 
 
 if __name__ == "__main__":

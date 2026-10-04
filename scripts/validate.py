@@ -349,6 +349,55 @@ def source_path(source_root: Path, repository: dict[str, object]) -> Path:
     return source_root / checkout
 
 
+def check_candidate_python_install(source: Path, commit: str) -> None:
+    """Bind installed bytes and PEP 610 VCS identity to the clean pinned checkout."""
+    distribution = importlib.metadata.distribution("determa-state")
+    direct_url = json.loads(distribution.read_text("direct_url.json") or "null")
+    if not isinstance(direct_url, dict):
+        raise ValueError("candidate Python engine has no VCS install provenance")
+    vcs = direct_url.get("vcs_info")
+    if (
+        direct_url.get("url") != "https://github.com/fruwehq/determa-state-python.git"
+        or not isinstance(vcs, dict)
+        or vcs.get("vcs") != "git"
+        or vcs.get("commit_id") != commit
+    ):
+        raise ValueError("candidate Python engine was not built from the pinned commit")
+    source_package = source / "src" / "determa" / "state"
+    tracked = run("git", "ls-files", "src/determa/state", cwd=source).splitlines()
+    source_files = {
+        Path(item).relative_to("src")
+        for item in tracked
+        if (source / item).is_file()
+    }
+    installed_files = {
+        Path(str(item))
+        for item in distribution.files or []
+        if str(item).startswith("determa/state/")
+        and "__pycache__" not in Path(str(item)).parts
+        and Path(str(item)).suffix != ".pyc"
+    }
+    installed_package = distribution.locate_file("determa/state")
+    actual_files = {
+        Path("determa/state") / item.relative_to(installed_package)
+        for item in installed_package.rglob("*")
+        if item.is_file()
+        and "__pycache__" not in item.parts
+        and item.suffix != ".pyc"
+    }
+    if (
+        not source_package.is_dir()
+        or not source_files
+        or source_files != installed_files
+        or source_files != actual_files
+    ):
+        raise ValueError("candidate Python package file inventory differs from pinned source")
+    for item in source_files:
+        if (source / "src" / item).read_bytes() != distribution.locate_file(item).read_bytes():
+            raise ValueError(f"candidate Python installed content differs from pinned source: {item}")
+    print(f"candidate Python provenance: {len(source_files)} files match pinned commit")
+
+
 def check_versions(source_root: Path) -> tuple[dict[str, object], dict[str, Path]]:
     state_version = (ROOT / "STATE_VERSION").read_text().strip()
     lock = load_lock()
@@ -410,14 +459,7 @@ def check_versions(source_root: Path) -> tuple[dict[str, object], dict[str, Path
     if importlib.metadata.version("determa-state") != state_version:
         raise ValueError("installed Python engine version drift")
     if lock["lifecycle"] == "candidate":
-        direct_url = importlib.metadata.distribution("determa-state").read_text("direct_url.json")
-        installed_from = json.loads(direct_url or "null")
-        expected_source = paths["python"].resolve()
-        install_url = urlsplit(installed_from.get("url", "")) if isinstance(installed_from, dict) else None
-        if install_url is None or install_url.scheme != "file" or unquote(
-            install_url.path
-        ) != str(expected_source):
-            raise ValueError("candidate Python engine was not installed from pinned source")
+        check_candidate_python_install(paths["python"], lock["repositories"]["python"]["commit"])
 
     required_references = {
         ROOT / "README.md": f"Determa State **{state_version}**",
@@ -1020,6 +1062,45 @@ def check_extracted_syntax(extracted: Iterable[Path]) -> None:
     )
 
 
+def check_candidate_cargo_dependencies(extracted: Iterable[Path], rust_commit: str) -> None:
+    """Every candidate tutorial Cargo manifest must resolve the pinned public source."""
+    manifests = [path for path in extracted if path.name == "Cargo.toml"]
+    if not manifests:
+        raise ValueError("candidate tutorial has no extracted Cargo manifests")
+    expected = {
+        "git": "https://github.com/fruwehq/determa-state-rust",
+        "rev": rust_commit,
+    }
+    for path in manifests:
+        manifest = tomllib.loads(path.read_text())
+        dependencies: list[tuple[str, object]] = []
+
+        def visit(value: object) -> None:
+            if isinstance(value, dict):
+                for key, item in value.items():
+                    if key == "determa-state" or (
+                        isinstance(item, dict) and item.get("package") == "determa-state"
+                    ):
+                        dependencies.append((key, item))
+                    else:
+                        visit(item)
+            elif isinstance(value, list):
+                for item in value:
+                    visit(item)
+
+        visit(manifest)
+        direct = manifest.get("dependencies", {})
+        if (
+            not isinstance(direct, dict)
+            or direct.get("determa-state") != expected
+            or dependencies != [("determa-state", expected)]
+        ):
+            raise ValueError(
+                f"candidate Cargo dependency in {path} must use exact public git and full locked rev"
+            )
+    print(f"candidate Cargo provenance: {len(manifests)} exact source manifests")
+
+
 def check_bundles(extracted: Iterable[Path], schema_path: Path) -> None:
     schema = json.loads(schema_path.read_text())
     Draft202012Validator.check_schema(schema)
@@ -1382,6 +1463,10 @@ def main() -> None:
         destination = Path(temporary)
         extracted = extract_examples(destination)
         check_extracted_syntax(extracted)
+        if load_lock()["lifecycle"] == "candidate":
+            check_candidate_cargo_dependencies(
+                extracted, load_lock()["repositories"]["rust"]["commit"]
+            )
         check_bundles(
             extracted,
             paths["specification"] / "schema" / "machine.schema.json",
