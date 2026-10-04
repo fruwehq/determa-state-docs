@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 import subprocess
 
-from ruamel.yaml import YAML
+from source_lock import load_lock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,15 +22,6 @@ def run(*args: str, cwd: Path | None = None) -> str:
         stdout=subprocess.PIPE,
     )
     return completed.stdout.strip()
-
-
-def load_lock() -> dict[str, object]:
-    yaml = YAML(typ="safe", pure=True)
-    yaml.version = (1, 2)
-    data = yaml.load((ROOT / "sources.lock.yaml").read_text())
-    if not isinstance(data, dict):
-        raise SystemExit("sources.lock.yaml must contain a map")
-    return data
 
 
 def main() -> None:
@@ -48,30 +39,25 @@ def main() -> None:
         if not isinstance(raw, dict):
             raise SystemExit(f"invalid repository lock for {name}")
         repository = raw["repository"]
-        tag = raw["tag"]
         commit = raw["commit"]
         checkout = raw["checkout"]
-        if not all(isinstance(value, str) for value in (repository, tag, commit, checkout)):
-            raise SystemExit(f"invalid repository lock values for {name}")
 
         destination = args.destination / checkout
         if not destination.exists():
-            run(
-                "git",
-                "clone",
-                "--depth",
-                "1",
-                "--branch",
-                tag,
-                f"https://github.com/{repository}.git",
-                str(destination),
-            )
+            destination.mkdir()
+            run("git", "init", str(destination))
+            run("git", "remote", "add", "origin", f"https://github.com/{repository}.git", cwd=destination)
+            run("git", "fetch", "--depth", "1", "origin", commit, cwd=destination)
+            run("git", "checkout", "--detach", "FETCH_HEAD", cwd=destination)
         actual = run("git", "rev-parse", "HEAD", cwd=destination)
         if actual != commit:
             raise SystemExit(
                 f"{destination} is {actual}, expected {commit}; "
                 "remove or move that generated checkout before retrying"
             )
+        origin = run("git", "remote", "get-url", "origin", cwd=destination)
+        if origin != f"https://github.com/{repository}.git":
+            raise SystemExit(f"{destination} has unexpected origin {origin}")
         dirty = run(
             "git",
             "status",

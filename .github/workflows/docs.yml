@@ -1,4 +1,4 @@
-name: Validate and publish
+name: Validate documentation
 
 on:
   pull_request:
@@ -16,10 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: read
     steps:
       - name: Check out tutorial
         uses: actions/checkout@v7
+
+      - name: Verify reviewed inputs before running repository code
+        run: python scripts/publication_hold_bootstrap.py
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -38,35 +40,16 @@ jobs:
       - name: Fetch pinned Determa State sources
         run: make sources
 
-      - name: Validate released version is current
+      - name: Install candidate Python engine from pinned source
+        run: python scripts/install_candidate.py
+
+      - name: Validate public source identity and release freshness
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python scripts/check_latest.py
 
+      - name: Verify publication hold
+        run: python scripts/check_publication_hold.py
+
       - name: Validate tutorials and build site
         run: make check
-
-      - name: Configure GitHub Pages
-        if: github.event_name == 'push'
-        uses: actions/configure-pages@v6
-
-      - name: Upload GitHub Pages artifact
-        if: github.event_name == 'push'
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
-
-  deploy:
-    if: github.event_name == 'push'
-    needs: validate
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
