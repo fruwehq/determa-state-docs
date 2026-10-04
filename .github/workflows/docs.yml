@@ -20,6 +20,9 @@ jobs:
       - name: Check out tutorial
         uses: actions/checkout@v7
 
+      - name: Verify reviewed inputs before running repository code
+        run: python scripts/publication_hold_bootstrap.py
+
       - name: Set up Python
         uses: actions/setup-python@v7
         with:

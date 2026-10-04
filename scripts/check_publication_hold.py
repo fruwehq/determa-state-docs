@@ -1,15 +1,15 @@
-"""Fail closed if any repository Actions path can publish documentation."""
+"""Fail closed when Actions or any reviewed validation input changes."""
 
 from pathlib import Path
-import re
 
 from ruamel.yaml import YAML
+from publication_hold_bootstrap import check_hold_inputs, reviewed_inputs, MANIFEST
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github" / "workflows" / "docs.yml"
 APPROVED_STEPS = (
     {"name": "Check out tutorial", "uses": "actions/checkout@v7"},
+    {"name": "Verify reviewed inputs before running repository code", "run": "python scripts/publication_hold_bootstrap.py"},
     {"name": "Set up Python", "uses": "actions/setup-python@v7", "with": {"python-version": "3.13", "cache": "pip"}},
     {"name": "Set up Rust", "uses": "dtolnay/rust-toolchain@stable", "with": {"toolchain": "1.95.0"}},
     {"name": "Install pinned dependencies", "run": "python -m pip install --requirement requirements.txt"},
@@ -25,12 +25,9 @@ APPROVED_CHECK = (
     '$(PYTHON) scripts/validate.py --source-root "$(SOURCE_ROOT)"',
     '$(PYTHON) -m mkdocs build --strict',
 )
-PUBLICATION_OPERATION = re.compile(
-    r"(?i)(?:\bpages\b|gh-deploy|ghp-import|git\s+push|gh\s+api)"
-)
-
 
 def check_hold(root: Path = ROOT) -> None:
+    check_hold_inputs(root)
     workflows = root / ".github" / "workflows"
     found = {path.relative_to(workflows).as_posix() for path in workflows.rglob("*") if path.is_file()}
     if found != {"docs.yml"}:
@@ -75,15 +72,8 @@ def check_hold(root: Path = ROOT) -> None:
             check_recipe.append(line.lstrip("\t"))
     if tuple(check_recipe) != APPROVED_CHECK:
         raise ValueError("make check recipe changed; publication hold review required")
-    # The approved commands enter these scripts. A publication primitive added
-    # below that entry point must be reviewed even if the workflow YAML stays put.
-    for path in [root / "Makefile", *sorted((root / "scripts").rglob("*.py"))]:
-        if path == root / "scripts" / "check_publication_hold.py":
-            continue
-        if PUBLICATION_OPERATION.search(path.read_text()):
-            raise ValueError(f"publication operation found in {path.relative_to(root)}")
 
 
 if __name__ == "__main__":
     check_hold()
-    print("publication hold: all workflow, action, permission, and check paths closed")
+    print("publication hold: workflow and reviewed input digests verified")

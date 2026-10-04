@@ -20,3 +20,15 @@ Cargo manifest must use the exact public Rust Git repository and full locked com
 The matching future candidate update must remove the registry `determa-state`
 requirement and update the tutorial dependencies and traces together with the engine
 API changes. `make check` mechanically enforces the workflow and local action hold.
+
+`publication-hold-inputs.json` records SHA-256 hashes of the reviewed workflow,
+Makefile, dependency declarations, site configuration, validation scripts and tests,
+and authored documentation (including runnable fences). The hold check fails when
+one of these files changes or a new file appears in those paths. An intended later
+content or validation change must update the manifest in the same reviewed pull
+request. The hash inventory makes changes visible for review; it does not decide
+whether changed code is safe to publish. The workflow still contains no publication
+step, and restoring one requires separate explicit publication authorization.
+CI verifies the inventory with a standard-library bootstrap immediately after
+checkout, before it installs dependencies or runs Make. The later YAML-aware check
+also verifies the exact workflow triggers, permissions, jobs, and steps.

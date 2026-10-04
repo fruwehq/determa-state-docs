@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import json
+import shutil
 import sys
 
 import pytest
@@ -11,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import check_latest  # noqa: E402
 import check_publication_hold  # noqa: E402
+import publication_hold_bootstrap  # noqa: E402
 import source_lock  # noqa: E402
 import validate  # noqa: E402
 
@@ -39,16 +41,17 @@ def save_lock(tmp_path, lock):
 
 
 def hold_fixture(tmp_path):
-    workflow = tmp_path / ".github" / "workflows" / "docs.yml"
-    workflow.parent.mkdir(parents=True)
-    workflow.write_text((ROOT / ".github/workflows/docs.yml").read_text())
-    (tmp_path / "Makefile").write_text((ROOT / "Makefile").read_text())
-    (tmp_path / "scripts").mkdir()
-    return workflow
+    for relative in check_publication_hold.reviewed_inputs(ROOT):
+        destination = tmp_path / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / relative, destination)
+    shutil.copy2(ROOT / check_publication_hold.MANIFEST, tmp_path / check_publication_hold.MANIFEST)
+    return tmp_path / ".github/workflows/docs.yml"
 
 
 def test_pages_hold_covers_every_workflow_trigger(tmp_path):
     hold_fixture(tmp_path)
+    publication_hold_bootstrap.check_hold_inputs(tmp_path)
     check_publication_hold.check_hold(tmp_path)
 
 
@@ -59,6 +62,10 @@ def test_pages_hold_covers_every_workflow_trigger(tmp_path):
     "direct_pages_api",
     "indirect_gh_deploy",
     "indirect_script_pages_api",
+    "split_git_push_argv",
+    "split_gh_api_argv",
+    "imported_dependency_change",
+    "runnable_markdown_change",
 ])
 def test_publication_hold_rejects_other_paths(tmp_path, attack):
     workflow = hold_fixture(tmp_path)
@@ -75,10 +82,30 @@ def test_publication_hold_rejects_other_paths(tmp_path, attack):
     elif attack == "indirect_gh_deploy":
         makefile = tmp_path / "Makefile"
         makefile.write_text(makefile.read_text().replace("mkdocs build --strict", "mkdocs gh-deploy"))
-    else:
+    elif attack == "indirect_script_pages_api":
         (tmp_path / "scripts" / "validate.py").write_text('import os\nos.system("gh api repos/x/y/pages")\n')
+    elif attack == "split_git_push_argv":
+        with (tmp_path / "scripts" / "validate.py").open("a") as stream:
+            stream.write('\nsubprocess.run(["git", "push", "origin", "main"], check=True)\n')
+    elif attack == "split_gh_api_argv":
+        with (tmp_path / "scripts" / "validate.py").open("a") as stream:
+            stream.write('\nsubprocess.run(["gh", "api", "repos/x/y/pages"], check=True)\n')
+    elif attack == "imported_dependency_change":
+        with (tmp_path / "scripts" / "source_lock.py").open("a") as stream:
+            stream.write('\nsubprocess.run(["git", "push", "origin", "main"], check=True)\n')
+    else:
+        with (tmp_path / "docs" / "getting-started" / "first-machine.md").open("a") as stream:
+            stream.write('\n```python\nsubprocess.run(["git", "push"])\n```\n')
     with pytest.raises(ValueError):
         check_publication_hold.check_hold(tmp_path)
+
+
+def test_bootstrap_rejects_split_argv_before_dependencies(tmp_path):
+    hold_fixture(tmp_path)
+    with (tmp_path / "scripts" / "validate.py").open("a") as stream:
+        stream.write('\nsubprocess.run(["git", "push", "origin", "main"], check=True)\n')
+    with pytest.raises(ValueError, match="reviewed manifest"):
+        publication_hold_bootstrap.check_hold_inputs(tmp_path)
 
 
 @pytest.mark.parametrize("mutation", [

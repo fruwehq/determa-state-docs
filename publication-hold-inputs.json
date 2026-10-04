@@ -1,0 +1,30 @@
+{
+  "format": 1,
+  "inputs": {
+    ".github/workflows/docs.yml": "98feb6fb55f8f94a373b867e1d8df881ae76a7ecc85bd719e374f85f3666be39",
+    "Makefile": "b45013c9f49a46d8674279c9c510b21662c30f7d442842143c296ce08a067cc6",
+    "STATE_VERSION": "1f930dd1f133c1f97a94fe3acb8db34372cf4c01ffdb2b3ff4ca72f9494121e9",
+    "coverage.yaml": "e7ac7549165f63a61bea41919680a5b74c120b9b190769907081fc7e2bf9e7c3",
+    "docs/getting-started/first-machine.md": "f96a95a352c204a784ba19034d56d06cd404c01f2729c2a9eda9c4b2bbbb89a7",
+    "docs/guides/cel-and-actions.md": "7654f0c27df8249db989beacf743ebe36a0c1607d2b70645102826082904c142",
+    "docs/guides/components-and-spawning.md": "79b87ca19394875c9d72d58bbde72b5fe209254370cd48e3ed1d4efd5953dae2",
+    "docs/guides/core-statecharts.md": "df6b59ee07fc238fd6c95e495cdf4b7e6930fa89eadd56627b492b505cfa445c",
+    "docs/guides/effects-faults-hosting.md": "00964fa079759e70d5c180fe58f2b8c191669e8ae79cd8bbd861ae1a4bb87add",
+    "docs/guides/execution-checkpoint-hosting.md": "93c82de63479e8634ed6a65f956bbd2a70b312e5575c3b0ce2344b2decc2fbcb",
+    "docs/guides/persistence-and-migration.md": "9f87ab1093223f12df2a4eb6ccdfd40fc7e4b194396fd56265ddf4b8fc7c5a0c",
+    "docs/guides/persistence-migration-reference.md": "805c604fe4a3e0a232242ab7d216b70c0e23224cebbcc2d316c42cd436e0c4eb",
+    "docs/index.md": "4296e4f32160e07e7c31b6fb3f312e299ce2520afd5790d370b08554d28d7f97",
+    "docs/reference/coverage.md": "5bae90651cecd67446f11b0a6a8a4aa5c5abb2b7c374463291497071364383c9",
+    "mkdocs.yml": "7157285d24ca8ec585fd06e9583d0d709d237fba8066cc118c8b967a91f4d4dd",
+    "requirements.txt": "fc085c9eff6acfdf3de00b34cd242d175ef6aaec008b0945cf8e245190dc1893",
+    "scripts/check_latest.py": "3d546f552bfd5c07ed24e4d2564f2990951b1e8035937f0ef8bf9cf00c09866b",
+    "scripts/check_publication_hold.py": "a1a3e558d0645c62e92e4dff16fb20bfc1126fc5b0edc560ccba9f656d398b1c",
+    "scripts/fetch_sources.py": "6121fcbcac44c2866b0a2fffbfaf88cd97c8e9acf99aece602afd7ee68c2298e",
+    "scripts/install_candidate.py": "b065a9b6ac2db841d84230c8b217647384019f4b96cdb790c095345ba050db6a",
+    "scripts/publication_hold_bootstrap.py": "5b294b526f474b94a07e424d725210988ca6cbbfcc59a6e7a2b27fb6ef3af1c4",
+    "scripts/source_lock.py": "f546284e8701dadd01ae053be30ffc13e08bdfcfc15edf9b98c4fc41ce93cfb0",
+    "scripts/validate.py": "e9a7b65c815c68f9c058beb22e0d93c067e5d7538ac6f66cbcccf65ccb07a75f",
+    "sources.lock.yaml": "23ffcbd00f9526c0ff77440c116eef6a11bbc2b66b647d1277279309797f3987",
+    "tests/test_publication_hold.py": "82359df69fd7f2c6d59bb4a851f1d9a28165d1ea488bbdae4a7986053574e668"
+  }
+}
