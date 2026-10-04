@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check upstream State tags and planned tutorial issues for drift."""
+"""Check public source identities and released tag freshness independently."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 
 from ruamel.yaml import YAML
+from source_lock import load_lock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,34 +40,25 @@ def github_json(url: str, token: str | None) -> object:
 def main() -> None:
     yaml = YAML(typ="safe", pure=True)
     yaml.version = (1, 2)
-    lock = yaml.load((ROOT / "sources.lock.yaml").read_text())
+    lock = load_lock()
     coverage = yaml.load((ROOT / "coverage.yaml").read_text())
     expected = tuple(int(part) for part in lock["state_version"].split("."))
     token = os.environ.get("GITHUB_TOKEN")
 
     for repository in lock["repositories"].values():
         name = repository["repository"]
-        refs = github_json(
-            f"https://api.github.com/repos/{name}/git/matching-refs/tags/v",
-            token,
+        commit = repository["commit"]
+        public_commit = github_json(
+            f"https://api.github.com/repos/{name}/commits/{commit}", token
         )
-        if not isinstance(refs, list):
-            raise SystemExit(f"unexpected tag response for {name}")
-        versions = [
-            tuple(int(part) for part in match.groups())
-            for item in refs
-            if (match := SEMVER_TAG.fullmatch(item["ref"]))
-        ]
-        if not versions:
-            raise SystemExit(f"no semantic version tags found for {name}")
-        latest = max(versions)
-        if latest != expected:
-            rendered = ".".join(str(part) for part in latest)
-            raise SystemExit(
-                f"{name} latest tag is v{rendered}; tutorial pins "
-                f"v{lock['state_version']}"
-            )
-        print(f"{name}: v{lock['state_version']}")
+        if not isinstance(public_commit, dict) or public_commit.get("sha") != commit:
+            raise SystemExit(f"{name} pinned commit is not an exact public commit: {commit}")
+        print(f"{name}: public commit {commit}")
+
+    if lock["lifecycle"] == "released":
+        check_released_freshness(lock, expected, token)
+    else:
+        print("candidate source identity checked; published-tag freshness is separate")
 
     planned_issues: dict[str, tuple[str, str, int]] = {}
     for group in (
@@ -96,6 +88,38 @@ def main() -> None:
         if issue.get("state") != "open":
             raise SystemExit(f"planned issue is not open: {issue_url}")
         print(f"planned issue: {issue_url}")
+
+
+def check_released_freshness(lock: dict, expected: tuple[int, ...], token: str | None) -> None:
+    """Only released documentation is compared to the latest published tags."""
+    for repository in lock["repositories"].values():
+        name = repository["repository"]
+        tagged = github_json(
+            f"https://api.github.com/repos/{name}/commits/{repository['tag']}", token
+        )
+        if not isinstance(tagged, dict) or tagged.get("sha") != repository["commit"]:
+            raise SystemExit(f"{name} released tag does not resolve to pinned commit")
+        refs = github_json(
+            f"https://api.github.com/repos/{name}/git/matching-refs/tags/v",
+            token,
+        )
+        if not isinstance(refs, list):
+            raise SystemExit(f"unexpected tag response for {name}")
+        versions = [
+            tuple(int(part) for part in match.groups())
+            for item in refs
+            if (match := SEMVER_TAG.fullmatch(item["ref"]))
+        ]
+        if not versions:
+            raise SystemExit(f"no semantic version tags found for {name}")
+        latest = max(versions)
+        if latest != expected:
+            rendered = ".".join(str(part) for part in latest)
+            raise SystemExit(
+                f"{name} latest tag is v{rendered}; tutorial pins "
+                f"v{lock['state_version']}"
+            )
+        print(f"{name}: latest released tag v{lock['state_version']}")
 
 
 if __name__ == "__main__":

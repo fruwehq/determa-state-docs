@@ -52,8 +52,12 @@ make check
 ```
 
 Do not update `STATE_VERSION` or `sources.lock.yaml` independently. A synchronized
-State release update must refresh all four pinned repositories, regenerate the coverage
-inventory, update affected chapters, and pass both engines.
+State candidate or release update must refresh all four pinned repositories,
+regenerate the coverage inventory, update affected chapters, and pass both engines.
+Use `lifecycle: candidate` with exact public commits and no tags while a version is
+unreleased. Candidate validation installs Python from the pinned source and uses
+commit links; release validation checks exact tags and published freshness. The
+publication hold in [PUBLICATION_HOLD.md](PUBLICATION_HOLD.md) applies to both.
 
 ## Pull requests
 

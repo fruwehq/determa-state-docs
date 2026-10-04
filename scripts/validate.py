@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Iterable
 import json
+import importlib.metadata
 import os
 from pathlib import Path, PurePosixPath
 import re
@@ -20,6 +21,7 @@ import determa.state as determa_state
 from jsonschema import Draft202012Validator
 from markdown_it import MarkdownIt
 from ruamel.yaml import YAML
+from source_lock import load_lock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +32,7 @@ ISSUE_URL = re.compile(
 )
 CONFORMANCE_CASE_LINK = re.compile(
     r"https://github\.com/fruwehq/determa-state-conformance/tree/"
-    r"v([^/]+)/conformance/core/([0-9]+-[A-Za-z0-9-]+)"
+    r"([^/]+)/conformance/core/([0-9]+-[A-Za-z0-9-]+)"
 )
 CORE_STATECHARTS_CHAPTER = "docs/guides/core-statecharts.md"
 CORE_STATECHARTS_SPECIFICATION_SECTIONS = (
@@ -334,6 +336,12 @@ def require_list(value: object, label: str) -> list[object]:
     return value
 
 
+def source_ref(name: str) -> str:
+    lock = load_lock()
+    row = lock["repositories"][name]
+    return row["tag"] if lock["lifecycle"] == "released" else row["commit"]
+
+
 def source_path(source_root: Path, repository: dict[str, object]) -> Path:
     checkout = repository.get("checkout")
     if not isinstance(checkout, str):
@@ -343,7 +351,7 @@ def source_path(source_root: Path, repository: dict[str, object]) -> Path:
 
 def check_versions(source_root: Path) -> tuple[dict[str, object], dict[str, Path]]:
     state_version = (ROOT / "STATE_VERSION").read_text().strip()
-    lock = require_map(load_yaml(ROOT / "sources.lock.yaml"), "sources.lock.yaml")
+    lock = load_lock()
     coverage = require_map(load_yaml(ROOT / "coverage.yaml"), "coverage.yaml")
     if lock.get("state_version") != state_version:
         raise ValueError("sources.lock.yaml state_version does not match STATE_VERSION")
@@ -363,6 +371,10 @@ def check_versions(source_root: Path) -> tuple[dict[str, object], dict[str, Path
             raise ValueError(
                 f"{name} source is {actual_commit}, expected {expected_commit}"
             )
+        expected_origin = f"https://github.com/{repository['repository']}.git"
+        origin = run("git", "remote", "get-url", "origin", cwd=path)
+        if origin != expected_origin:
+            raise ValueError(f"{name} source origin is {origin}, expected {expected_origin}")
         dirty = run(
             "git",
             "status",
@@ -395,19 +407,40 @@ def check_versions(source_root: Path) -> tuple[dict[str, object], dict[str, Path
     rust_metadata = tomllib.loads((paths["rust"] / "Cargo.toml").read_text())
     if rust_metadata["package"]["version"] != state_version:
         raise ValueError("Rust crate version drift")
+    if importlib.metadata.version("determa-state") != state_version:
+        raise ValueError("installed Python engine version drift")
+    if lock["lifecycle"] == "candidate":
+        direct_url = importlib.metadata.distribution("determa-state").read_text("direct_url.json")
+        installed_from = json.loads(direct_url or "null")
+        expected_source = paths["python"].resolve()
+        install_url = urlsplit(installed_from.get("url", "")) if isinstance(installed_from, dict) else None
+        if install_url is None or install_url.scheme != "file" or unquote(
+            install_url.path
+        ) != str(expected_source):
+            raise ValueError("candidate Python engine was not installed from pinned source")
 
     required_references = {
         ROOT / "README.md": f"Determa State **{state_version}**",
         ROOT / "AGENTS.md": f"Determa State synchronized version: `{state_version}`",
         ROOT / "docs" / "index.md": f"Determa State {state_version}",
-        ROOT / "requirements.txt": f"determa-state=={state_version}",
-        ROOT / "docs" / "getting-started" / "first-machine.md": (
-            f'determa-state = "={state_version}"'
-        ),
     }
     for path, expected in required_references.items():
         if expected not in path.read_text():
             raise ValueError(f"tutorial version reference drift in {path.relative_to(ROOT)}")
+    requirements = (ROOT / "requirements.txt").read_text()
+    if lock["lifecycle"] == "released":
+        if f"determa-state=={state_version}" not in requirements:
+            raise ValueError("released Python dependency version drift")
+        if f'determa-state = "={state_version}"' not in (
+            ROOT / "docs" / "getting-started" / "first-machine.md"
+        ).read_text():
+            raise ValueError("released Rust tutorial dependency version drift")
+    elif re.search(r"^determa-state\s*(?:[=<>~!]|$)", requirements, re.MULTILINE):
+        raise ValueError("candidate must install Python from the pinned source, not a registry requirement")
+    elif f'determa-state = "={state_version}"' in (
+        ROOT / "docs" / "getting-started" / "first-machine.md"
+    ).read_text():
+        raise ValueError("candidate Rust tutorial must use pinned source resolution")
 
     print(f"source versions: Determa State {state_version}")
     return coverage, paths
@@ -570,7 +603,7 @@ def check_execution_checkpoint_profile_coverage(
             )
         url = (
             "https://github.com/fruwehq/determa-state-conformance/tree/"
-            f"v{state_version}/conformance/profiles/execution-checkpoint/{case}"
+            f"{source_ref('conformance')}/conformance/profiles/execution-checkpoint/{case}"
         )
         if chapter.count(url) != 1:
             raise ValueError(
@@ -662,7 +695,7 @@ def check_cel_and_actions_coverage(coverage: dict[str, object]) -> None:
     for case in CEL_AND_ACTIONS_CASES:
         link = (
             "https://github.com/fruwehq/determa-state-conformance/"
-            f"tree/v{state_version}/conformance/core/{case}"
+            f"tree/{source_ref('conformance')}/conformance/core/{case}"
         )
         if f"]({link})" not in chapter:
             raise ValueError(f"CEL/actions chapter does not link conformance {case}")
@@ -720,7 +753,7 @@ def check_effects_faults_hosting_coverage(coverage: dict[str, object]) -> None:
     for identifier, anchor in EFFECTS_FAULTS_HOSTING_SPECIFICATION_ANCHORS.items():
         url = (
             "https://github.com/fruwehq/determa-state-spec/blob/"
-            f"v{state_version}/SPEC.md#{anchor}"
+            f"{source_ref('specification')}/SPEC.md#{anchor}"
         )
         if chapter.count(url) != 1:
             raise ValueError(
@@ -730,7 +763,7 @@ def check_effects_faults_hosting_coverage(coverage: dict[str, object]) -> None:
     for case in EFFECTS_FAULTS_HOSTING_CASES:
         url = (
             "https://github.com/fruwehq/determa-state-conformance/tree/"
-            f"v{state_version}/conformance/core/{case}"
+            f"{source_ref('conformance')}/conformance/core/{case}"
         )
         if chapter.count(url) != 1:
             raise ValueError(
@@ -786,7 +819,7 @@ def check_persistence_migration_coverage(coverage: dict[str, object]) -> None:
         for identifier in identifiers:
             url = (
                 "https://github.com/fruwehq/determa-state-spec/blob/"
-                f"v{state_version}/SPEC.md#"
+                f"{source_ref('specification')}/SPEC.md#"
                 f"{PERSISTENCE_MIGRATION_SPECIFICATION_ANCHORS[identifier]}"
             )
             if chapter.count(url) != 1:
@@ -799,7 +832,7 @@ def check_persistence_migration_coverage(coverage: dict[str, object]) -> None:
         for case in cases:
             url = (
                 "https://github.com/fruwehq/determa-state-conformance/tree/"
-                f"v{state_version}/conformance/core/{case}"
+                f"{source_ref('conformance')}/conformance/core/{case}"
             )
             if chapter.count(url) != 1:
                 raise ValueError(
@@ -868,7 +901,7 @@ def check_core_statecharts_coverage(coverage: dict[str, object]) -> None:
     chapter = (ROOT / CORE_STATECHARTS_CHAPTER).read_text()
     actual_links = set(CONFORMANCE_CASE_LINK.findall(chapter))
     expected_links = {
-        (state_version, case)
+        (source_ref("conformance"), case)
         for case in CORE_STATECHARTS_CONFORMANCE_CASES
     }
     if actual_links != expected_links:
@@ -880,7 +913,7 @@ def check_core_statecharts_coverage(coverage: dict[str, object]) -> None:
     for case in CORE_STATECHARTS_CONFORMANCE_CASES:
         url = (
             "https://github.com/fruwehq/determa-state-conformance/tree/"
-            f"v{state_version}/conformance/core/{case}"
+            f"{source_ref('conformance')}/conformance/core/{case}"
         )
         if chapter.count(url) != 1:
             raise ValueError(

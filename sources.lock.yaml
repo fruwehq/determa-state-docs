@@ -1,4 +1,5 @@
 state_version: "0.2.0"
+lifecycle: released
 repositories:
   specification:
     repository: fruwehq/determa-state-spec
