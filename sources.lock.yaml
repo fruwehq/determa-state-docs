@@ -15,5 +15,5 @@ repositories:
     checkout: determa-state-python
   rust:
     repository: fruwehq/determa-state-rust
-    commit: efaed0a21409f75ed55f159a6f8c833f3b62e88c
+    commit: 272e37e7255ae4c650f714a94ea6cddea61d245d
     checkout: determa-state-rust
