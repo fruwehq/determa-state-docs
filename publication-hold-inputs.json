@@ -15,9 +15,10 @@
     "docs/guides/optional-host-profiles.md": "aa263546c0ff81d966dd1177e61b4171b2e00d75f065a1c5c83bfe129a4ce6b0",
     "docs/guides/persistence-and-migration.md": "a859138da88c0ae659ae4884214df25ece4ce5843c2e88afe759de5b43cef3cd",
     "docs/guides/persistence-migration-reference.md": "4d1336aaffbef31911af5365b384bff7dd5815729f9167f9f231c4f69309ae26",
+    "docs/guides/public-host-client.md": "ba00393946353509d3ec68b7061e6f0a400223d1df9015c1fac79bbda33a8206",
     "docs/index.md": "59258d8993982821a1724657db9939d1b9d7b383039f0649c3d40200318185a5",
     "docs/reference/coverage.md": "4a2fa1c946ce1889aac7833a2ab587118bc269c52c1649ca6b88b85eac2ecf79",
-    "mkdocs.yml": "db9565fa5058821722bfac786db06f18896379c701772d9ffaf9106c60c0b990",
+    "mkdocs.yml": "f8d4479c03e3e4bbd96064268ad7c3d94592ede00f8fe1dc22e33a613743b5e7",
     "requirements.txt": "e419e15f9a05750d05a10e26c8b63ea360a3f11dac5637cb3aac5722dd2a3965",
     "scripts/check_latest.py": "3d546f552bfd5c07ed24e4d2564f2990951b1e8035937f0ef8bf9cf00c09866b",
     "scripts/check_publication_hold.py": "a1a3e558d0645c62e92e4dff16fb20bfc1126fc5b0edc560ccba9f656d398b1c",
@@ -25,8 +26,8 @@
     "scripts/install_candidate.py": "b065a9b6ac2db841d84230c8b217647384019f4b96cdb790c095345ba050db6a",
     "scripts/publication_hold_bootstrap.py": "5b294b526f474b94a07e424d725210988ca6cbbfcc59a6e7a2b27fb6ef3af1c4",
     "scripts/source_lock.py": "f546284e8701dadd01ae053be30ffc13e08bdfcfc15edf9b98c4fc41ce93cfb0",
-    "scripts/validate.py": "dc456de1baccdc5f1d099d7390831dc502f562b2b91ce6f9392a8c013ff4cc96",
-    "sources.lock.yaml": "5f5a50b1ad6d00f8b75d336b6ef0507abbdcddde29d3c9117af4cc1a5eb77b86",
+    "scripts/validate.py": "37a061f5714db590d98a17781604aa64bcef6dfad63666e5547a05798937fb39",
+    "sources.lock.yaml": "0b4250545a67222ca1b4cba13192b7bd50caa572ade1230ef6fb9c21b94eea54",
     "tests/test_publication_hold.py": "438dea3a3fd0bb971683a683c64555e58cca267f533e1032f7af7cd1111c466e"
   }
 }

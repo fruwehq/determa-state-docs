@@ -54,6 +54,7 @@ nav:
       - Components and spawning: guides/components-and-spawning.md
       - Mailboxes and inspection: guides/mailboxes-and-inspection.md
       - Optional host profiles: guides/optional-host-profiles.md
+      - Public client and local host: guides/public-host-client.md
       - Effects, faults, and hosting: guides/effects-faults-hosting.md
       - Persistence and migration:
           - Durable checkpoint host: guides/execution-checkpoint-hosting.md
