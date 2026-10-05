@@ -15,13 +15,12 @@ mkdir determa-persistence-tutorial
 cd determa-persistence-tutorial
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install --requirement requirements.txt
-python scripts/install_candidate.py
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
 mkdir -p rust/src
 ```
 
-Install from a checkout of this manual using its immutable public source lock.
-There is no published 0.3.0 package. Each tutorial source file is shown in full.
+The install command pins the exact public candidate commit. There is no published
+0.3.0 package. Each tutorial source file is shown in full.
 
 ## 2. Define version 1
 
@@ -756,7 +755,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = { git = "https://github.com/fruwehq/determa-state-rust.git", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
 serde_json = "1"
 serde_json_canonicalizer = "0.3"
 sha2 = "0.10"

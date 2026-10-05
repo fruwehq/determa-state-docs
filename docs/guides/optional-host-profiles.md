@@ -42,7 +42,7 @@ release defines no leader election, distributed coordinator or managed control p
 
 ## Commit native intents before invoking a provider
 
-Python's `CommittedEffectsHost` implements the local SQLite journal boundary. It
+Python's `determa.state.effects.SQLiteCommittedEffectHost` implements the local SQLite journal boundary. It
 requires a `VerifiedNativeHandler` for dispatch; an ordinary callback is refused.
 The producing transaction commits the aggregate, external intent, pinned route and
 business operation token before the provider is invoked. Destination calls use

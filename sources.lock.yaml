@@ -11,7 +11,7 @@ repositories:
     checkout: determa-state-conformance
   python:
     repository: fruwehq/determa-state-python
-    commit: 3b5d1c9a98e8691acd754357d1f3645f387f3ad8
+    commit: e7406f35735832fc46ecbc2f668b178dbb6d65fd
     checkout: determa-state-python
   rust:
     repository: fruwehq/determa-state-rust

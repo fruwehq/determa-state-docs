@@ -1,10 +1,9 @@
 state_version: 0.3.0
-
 specification:
 - id: '0'
   status: non_user_facing
-  reason: Normative reference inventory and semantic-independence rules are 
-    specification maintenance material.
+  reason: Normative reference inventory and semantic-independence rules are specification
+    maintenance material.
 - id: '1'
   status: covered
   chapter: docs/index.md
@@ -115,8 +114,8 @@ specification:
   chapter: docs/guides/effects-faults-hosting.md
 - id: '10.4'
   status: non_user_facing
-  reason: Dead-letter ownership is deliberately outside the portable core and 
-    has no portable tutorial API.
+  reason: Dead-letter ownership is deliberately outside the portable core and has no portable
+    tutorial API.
 - id: '11'
   status: covered
   chapter: docs/guides/effects-faults-hosting.md
@@ -149,75 +148,105 @@ specification:
   chapter: docs/guides/effects-faults-hosting.md
 - id: '14'
   status: non_user_facing
-  reason: The conformance delivery plan is repository governance rather than a 
-    machine-authoring feature.
+  reason: The conformance delivery plan is repository governance rather than a machine-authoring
+    feature.
 - id: '15'
   status: non_user_facing
-  reason: The roadmap belongs to the separate real-world examples repository and
-    is not tutorial or runtime behavior.
-- {id: '16', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.1', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.2', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.3', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.4', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.5', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.6', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.7', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.8', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.9', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.10', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.11', status: covered, chapter: 
-    docs/guides/persistence-and-migration.md}
-- {id: '16.12', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.13', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
-- {id: '16.14', status: covered, chapter: 
-    docs/guides/persistence-migration-reference.md}
+  reason: The roadmap belongs to the separate real-world examples repository and is not tutorial or
+    runtime behavior.
+- id: '16'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.1'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.2'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.3'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.4'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.5'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.6'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.7'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.8'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.9'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.10'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.11'
+  status: covered
+  chapter: docs/guides/persistence-and-migration.md
+- id: '16.12'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.13'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
+- id: '16.14'
+  status: covered
+  chapter: docs/guides/persistence-migration-reference.md
 - id: '16.15'
   status: covered
   chapter: docs/guides/persistence-migration-reference.md
-- {id: '17', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.1', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.2', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.3', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.4', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.5', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.6', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.7', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.8', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.9', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.10', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.11', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.12', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.13', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
-- {id: '17.14', status: covered, chapter: 
-    docs/guides/execution-checkpoint-hosting.md}
+- id: '17'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.1'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.2'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.3'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.4'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.5'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.6'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.7'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.8'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.9'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.10'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.11'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.12'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.13'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
+- id: '17.14'
+  status: covered
+  chapter: docs/guides/execution-checkpoint-hosting.md
 - id: '18'
   status: covered
   chapter: docs/guides/optional-host-profiles.md
@@ -348,31 +377,42 @@ specification:
   status: covered
   chapter: docs/guides/optional-host-profiles.md
 conformance:
-- {case: 01-guarded-leaf, status: covered, chapter: 
-    docs/getting-started/first-machine.md}
-- {case: 02-hierarchy-bubbling, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 03-initial-action, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
+- case: 01-guarded-leaf
+  status: covered
+  chapter: docs/getting-started/first-machine.md
+- case: 02-hierarchy-bubbling
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 03-initial-action
+  status: covered
+  chapter: docs/guides/core-statecharts.md
 - case: 04-portable-event-deferral
   status: covered
   chapter: docs/guides/mailboxes-and-inspection.md
-- {case: 05-variable-scope, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 06-payload-typing, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 07-internal-external, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 08-local-vs-external, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 09-parallel-components, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 10-history-deep, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 11-history-shallow, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 116-legacy-format-policy, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
+- case: 05-variable-scope
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 06-payload-typing
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 07-internal-external
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 08-local-vs-external
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 09-parallel-components
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 10-history-deep
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 11-history-shallow
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 116-legacy-format-policy
+  status: covered
+  chapter: docs/guides/core-statecharts.md
 - case: 117-version1-mailboxes
   status: covered
   chapter: docs/guides/mailboxes-and-inspection.md
@@ -382,8 +422,9 @@ conformance:
 - case: 119-native-v1-aggregate-integrity
   status: covered
   chapter: docs/guides/persistence-migration-reference.md
-- {case: 12-guarded-list, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
+- case: 12-guarded-list
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
 - case: 120-native-v1-definition-package
   status: covered
   chapter: docs/guides/persistence-migration-reference.md
@@ -402,159 +443,237 @@ conformance:
 - case: 125-exact-candidate-inspection
   status: covered
   chapter: docs/guides/mailboxes-and-inspection.md
-- {case: 13-spawn-completion, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 14-explicit-targets, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 15-external-env-refresh, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 16-timer-extension, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 17-action-fault, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 18-domain-failure, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 19-public-event-contract, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 20-invalid-public-correlation, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 23-choice, status: covered, chapter: docs/guides/core-statecharts.md}
-- {case: 24-choice-chain, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 25-choice-invalid, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 26-unreachable, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 27-dead-branch, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 28-reachable-ok, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 29-owned-spawn, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 30-owned-spawn-cancel, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 32-history-resume-restart, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 33-history-capture-timing, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 34-history-first-entry, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 35-shallow-deep-history, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 36-history-variable-reinitialization, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 37-destroyed-variable-write, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 38-destroyed-reference-binding, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 39-ancestor-internal-transition, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 40-noncanonical-transitions, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 42-initial-history-rejection, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 43-self-history-lifecycle, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 44-local-history, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 45-proper-ancestor-target, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 46-root-boundary-validation, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 47-scoped-owned-child-lifetime, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 48-null-cancel, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 49-exit-action-cancel, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 50-root-fault-terminal-aggregate, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 51-component-initialization-fault, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 52-spawned-initialization-fault, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 53-compound-choice-lifecycle, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 54-stale-component-target, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 55-root-owner-target, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 56-variable-initialization, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 57-creation-binding-defaults, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 58-missing-creation-binding, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 59-payload-default-materialization, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 60-payload-default-validation, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 61-expression-map-order, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 62-parsed-value-model, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 63-entry-stop-interruption, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 64-dynamic-target-expression-order, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 65-portable-cel-profile, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 66-cel-profile-rejections, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 67-bundle-state-binding, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 68-cel-and-nonabsorbed-error, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 69-cel-or-nonabsorbed-error, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 70-dynamic-target-list-order, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 71-cel-reversed-and-nonabsorbed-error, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 72-cel-reversed-or-nonabsorbed-error, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 73-synchronous-initialization-cycle, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 74-sibling-cleanup-order, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 75-root-initialization-fault, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 76-invalid-create-unicode, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 77-invalid-dispatch-unicode, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 78-component-external-refresh, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 79-missing-refresh-field, status: covered, chapter: 
-    docs/guides/cel-and-actions.md}
-- {case: 80-unbound-owned-child, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 81-holder-reference-reuse, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 82-instance-reference-target-identity, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 83-contained-dynamic-instance-send, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 84-choice-stop-chain, status: covered, chapter: 
-    docs/guides/core-statecharts.md}
-- {case: 85-initialization-emission-rollback, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 86-initial-component-completion-order, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 87-internal-env-target-mode, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 88-reserved-payload-validation, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 89-nonfinite-creation-binding, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 90-host-numeric-normalization, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 91-component-host-input-rejection, status: covered, chapter: 
-    docs/guides/components-and-spawning.md}
-- {case: 92-faulted-root-component-precedence, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
-- {case: 93-optional-correlation, status: covered, chapter: 
-    docs/guides/effects-faults-hosting.md}
+- case: 13-spawn-completion
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 14-explicit-targets
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 15-external-env-refresh
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 16-timer-extension
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 17-action-fault
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 18-domain-failure
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 19-public-event-contract
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 20-invalid-public-correlation
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 23-choice
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 24-choice-chain
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 25-choice-invalid
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 26-unreachable
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 27-dead-branch
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 28-reachable-ok
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 29-owned-spawn
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 30-owned-spawn-cancel
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 32-history-resume-restart
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 33-history-capture-timing
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 34-history-first-entry
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 35-shallow-deep-history
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 36-history-variable-reinitialization
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 37-destroyed-variable-write
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 38-destroyed-reference-binding
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 39-ancestor-internal-transition
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 40-noncanonical-transitions
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 42-initial-history-rejection
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 43-self-history-lifecycle
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 44-local-history
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 45-proper-ancestor-target
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 46-root-boundary-validation
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 47-scoped-owned-child-lifetime
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 48-null-cancel
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 49-exit-action-cancel
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 50-root-fault-terminal-aggregate
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 51-component-initialization-fault
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 52-spawned-initialization-fault
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 53-compound-choice-lifecycle
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 54-stale-component-target
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 55-root-owner-target
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 56-variable-initialization
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 57-creation-binding-defaults
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 58-missing-creation-binding
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 59-payload-default-materialization
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 60-payload-default-validation
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 61-expression-map-order
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 62-parsed-value-model
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 63-entry-stop-interruption
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 64-dynamic-target-expression-order
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 65-portable-cel-profile
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 66-cel-profile-rejections
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 67-bundle-state-binding
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 68-cel-and-nonabsorbed-error
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 69-cel-or-nonabsorbed-error
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 70-dynamic-target-list-order
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 71-cel-reversed-and-nonabsorbed-error
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 72-cel-reversed-or-nonabsorbed-error
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 73-synchronous-initialization-cycle
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 74-sibling-cleanup-order
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 75-root-initialization-fault
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 76-invalid-create-unicode
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 77-invalid-dispatch-unicode
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 78-component-external-refresh
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 79-missing-refresh-field
+  status: covered
+  chapter: docs/guides/cel-and-actions.md
+- case: 80-unbound-owned-child
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 81-holder-reference-reuse
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 82-instance-reference-target-identity
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 83-contained-dynamic-instance-send
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 84-choice-stop-chain
+  status: covered
+  chapter: docs/guides/core-statecharts.md
+- case: 85-initialization-emission-rollback
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 86-initial-component-completion-order
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 87-internal-env-target-mode
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 88-reserved-payload-validation
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 89-nonfinite-creation-binding
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 90-host-numeric-normalization
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 91-component-host-input-rejection
+  status: covered
+  chapter: docs/guides/components-and-spawning.md
+- case: 92-faulted-root-component-precedence
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
+- case: 93-optional-correlation
+  status: covered
+  chapter: docs/guides/effects-faults-hosting.md
 execution_checkpoint_profile:
 - case: checkpoint-01-native-lifecycle
   status: covered

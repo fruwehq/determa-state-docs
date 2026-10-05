@@ -25,12 +25,11 @@ mkdir determa-checkpoint-tutorial
 cd determa-checkpoint-tutorial
 python -m venv .venv
 . .venv/bin/activate
-python -m pip install --requirement requirements.txt
-python scripts/install_candidate.py
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
 ```
 
-Run the installation commands from a checkout of this manual: its source lock selects
-the exact public candidate commit. There is no published 0.3.0 package.
+The command selects the exact public candidate commit. There is no published 0.3.0
+package.
 
 This tutorial uses SQLite so that stopping the Python process does not erase accepted
 work. The same host accepts an `ExecutionStore` object directly, so an application can

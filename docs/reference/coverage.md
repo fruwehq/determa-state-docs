@@ -26,13 +26,16 @@ The [persistence and migration tutorial](../guides/persistence-and-migration.md)
 adds the portable aggregate, content-addressed definition registry, SQLite
 inbox/state/outbox transaction, deterministic quarantine, deleted-state failure, and
 explicit lazy remap. The
-[persistence reference lab](../guides/persistence-migration-reference.md) executes all
-108 released Python and Rust persistence vectors and teaches package transport,
+[persistence reference lab](../guides/persistence-migration-reference.md) explains the 154 core v1 vectors. The validation gate executes all
+162 v1 vectors and 142 durable-host vectors against both Python and Rust and teaches package transport,
 variable/history/component/owned-runtime transforms, exact multi-descriptor routes,
 terminal maintenance migration, failure completeness, resource limits,
 occurrence-local binding, and large decimal identities.
 The [durable checkpoint host](../guides/execution-checkpoint-hosting.md) covers all
-three released profile scenarios and executes the complete profile in both engines.
+seven current checkpoint case directories. Its runnable restart trace verifies local
+SQLite admission, processing and replay; the full vector gate runs both engines.
+[Optional host profiles](../guides/optional-host-profiles.md) explains conditional
+provider boundaries without claiming that prose installs or verifies those providers.
 
 There are no planned entries. Aggregate package transport is covered; portable package
 imports in machine definitions remain unsupported.
