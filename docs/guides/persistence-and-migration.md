@@ -282,7 +282,7 @@ The host stores definitions and descriptors once under their content digests. An
 aggregate row stores only canonical aggregate bytes. One SQLite transaction owns the
 inbox decision, aggregate replacement, ordered outbox inserts, and migration audit.
 This implements the
-[lazy transactional host order in specification §16.11](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1611-lazy-transactional-host-ordering).
+lazy transactional host order in specification §16.11.
 
 <!-- determa-example: persistence-tutorial/app.py -->
 ```python
@@ -890,21 +890,6 @@ or rewrite every database row during deployment. Lazy migration keeps dormant ro
 cheap while the central registry retains the old declarative definitions needed to
 interpret them. Definition garbage collection must therefore be reference-aware.
 
-This focused example covers round-trip encoding, definition resolution, unchanged
-restoration, explicit active-state remapping, deleted-state totality, counter and
-identity preservation, rollback, migration plus dispatch, and the host transaction
-order demonstrated by conformance cases
-[94](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/94-aggregate-wire-round-trip),
-[96](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/96-definition-resolution),
-[98](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/98-unchanged-definition-resume),
-[100](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/100-explicit-active-state-remap),
-[101](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/101-deleted-active-state-totality),
-[106](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/106-counter-and-identity-preservation),
-[108](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/108-migration-retry-and-rollback), and
-[109](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/109-migration-then-dispatch).
+## Normative coverage
 
-Continue with the
-[persistence and migration reference lab](persistence-migration-reference.md) for
-package attachments, variable/history/component/owned-runtime transforms, chained
-routes, terminal maintenance migration, resource limits, occurrence-local transform
-binding, and large decimal identity projections.
+- [§16.11](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1611-lazy-transactional-host-ordering)

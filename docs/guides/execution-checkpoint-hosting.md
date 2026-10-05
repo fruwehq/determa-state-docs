@@ -314,27 +314,28 @@ declared event; the core itself never advances a clock.
 
 ## Normative coverage
 
-This guide explains the version-1 execution-checkpoint contract:
+- [§17](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#17-portable-execution-checkpoints-and-hosting-adapters)
+- [§17.1](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#171-scope)
+- [§17.2](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#172-closed-checkpoint-artifact)
+- [§17.3](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#173-durable-operation-receipts-and-replay)
+- [§17.4](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#174-aggregate-owned-admission-and-processing)
+- [§17.5](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#175-maintenance-migration-operations)
+- [§17.6](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#176-durable-outbox-lifecycle)
+- [§17.7](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#177-migration-audit-and-canonical-ordering)
+- [§17.8](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#178-replay-retention-and-root-lifecycle)
+- [§17.9](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#179-transaction-and-concurrency-ordering)
+- [§17.10](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1710-execution-store-registration-and-resolution)
+- [§17.11](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1711-execution-store-capabilities-and-composed-host-profiles)
+- [§17.12](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1712-exact-guarantee-boundary)
+- [§17.13](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1713-cluster-checkpoint-composition)
+- [§17.14](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1714-external-timer-durability)
 
-- [§17 portable execution checkpoints and hosting adapters](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#17-portable-execution-checkpoints-and-hosting-adapters)
-- [§17.1 scope and compatibility](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#171-scope-and-compatibility)
-- [§17.2 closed checkpoint artifact](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#172-closed-checkpoint-artifact)
-- [§17.3 durable operation receipts and replay](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#173-durable-operation-receipts-and-replay)
-- [§17.4 queue-bearing admission and processing](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#174-unified-pending-deliveries)
-- [§17.5 maintenance-migration operations](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#175-maintenance-migration-operations)
-- [§17.6 durable outbox lifecycle](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#176-durable-outbox-lifecycle)
-- [§17.7 migration audit and canonical ordering](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#177-migration-audit-and-canonical-ordering)
-- [§17.8 replay retention and root lifecycle](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#178-replay-retention-and-root-lifecycle)
-- [§17.9 transaction and concurrency ordering](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#179-transaction-and-concurrency-ordering)
-- [§17.10 execution-store registration and resolution](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1710-execution-store-registration-and-resolution)
-- [§17.11 execution-store capabilities and composed host profiles](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1711-execution-store-capabilities-and-composed-host-profiles)
-- [§17.12 exact guarantee boundary](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1712-exact-guarantee-boundary)
-- [§17.13 cluster checkpoint composition](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1713-cluster-checkpoint-composition)
-- [§17.14 future timer durability](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1714-future-timer-durability)
+These current checkpoint cases cover native lifecycle, outbox, retention and v1 mailboxes:
 
-The optional profile groups its low-level vectors into three user-facing
-scenarios:
-
-- [checkpoint-01 delivery lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-01-delivery-lifecycle)
-- [checkpoint-02 outbox lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-02-outbox-lifecycle)
-- [checkpoint-03 retention and root lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-03-retention-and-root-lifecycle)
+- [checkpoint-01-native-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-01-native-lifecycle)
+- [checkpoint-02-native-outbox](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-02-native-outbox)
+- [checkpoint-03-native-retention](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-03-native-retention)
+- [checkpoint-04-version1-mailboxes](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-04-version1-mailboxes)
+- [checkpoint-05-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-05-spawned-host-trace)
+- [checkpoint-06-terminal-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-06-terminal-spawned-host-trace)
+- [checkpoint-07-complete-host-contract](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-07-complete-host-contract)

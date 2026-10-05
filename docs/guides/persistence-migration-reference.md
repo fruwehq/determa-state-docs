@@ -108,8 +108,25 @@ schema cannot establish native transactional delivery or worker authority.
 
 ## Normative coverage
 
-This lab explains [§16 portable persistence and definition migration](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#16-portable-persistence-and-definition-migration)
-and the pinned [core fixture inventory](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core).
-Use [the checkpoint guide](execution-checkpoint-hosting.md) for durable admission,
-restart and replay, and [the migration tutorial](persistence-and-migration.md) for the
-application-owned SQLite transaction and quarantine release.
+- [§16](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#16-portable-persistence-and-definition-migration)
+- [§16.1](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#161-independent-artifact-identities)
+- [§16.2](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#162-canonical-values-and-aggregate-encoding)
+- [§16.3](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#163-complete-root-ownership-aggregate)
+- [§16.4](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#164-immutable-identity-and-mutable-definition-binding)
+- [§16.5](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#165-content-addressed-definition-registry)
+- [§16.6](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#166-aggregate-shape-fingerprint)
+- [§16.7](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#167-immutable-declarative-migration-descriptors)
+- [§16.8](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#168-exact-route-and-migration-algorithm)
+- [§16.9](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#169-total-transform-matrix)
+- [§16.10](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1610-terminal-aggregates)
+- [§16.12](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1612-failure-rollback-quarantine-and-audit)
+- [§16.13](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1613-package-transport)
+- [§16.14](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1614-security-and-resource-limits)
+- [§16.15](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1615-queue-bearing-artifact-semantics)
+- [118-version1-persistence](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/118-version1-persistence)
+- [119-native-v1-aggregate-integrity](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/119-native-v1-aggregate-integrity)
+- [120-native-v1-definition-package](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/120-native-v1-definition-package)
+- [121-native-v1-migration-totality](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/121-native-v1-migration-totality)
+- [122-native-v1-migration-execution](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/122-native-v1-migration-execution)
+- [123-native-v1-migration-guards](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/123-native-v1-migration-guards)
+- [124-native-v1-occurrence-identity](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/124-native-v1-occurrence-identity)

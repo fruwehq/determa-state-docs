@@ -52,6 +52,8 @@ nav:
       - Core statecharts: guides/core-statecharts.md
       - CEL and actions: guides/cel-and-actions.md
       - Components and spawning: guides/components-and-spawning.md
+      - Mailboxes and inspection: guides/mailboxes-and-inspection.md
+      - Optional host profiles: guides/optional-host-profiles.md
       - Effects, faults, and hosting: guides/effects-faults-hosting.md
       - Persistence and migration:
           - Durable checkpoint host: guides/execution-checkpoint-hosting.md

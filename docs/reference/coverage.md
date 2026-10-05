@@ -4,7 +4,7 @@
 is the machine-readable source of truth for tutorial coverage.
 
 It inventories every normative section, every actual core conformance case, and every
-released execution-checkpoint profile case directory at the pinned Determa State 0.2.0
+version-1 execution-checkpoint profile case directory at the pinned unreleased Determa State 0.3.0
 revisions.
 
 Each entry is:
