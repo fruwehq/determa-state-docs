@@ -41,9 +41,11 @@ implementation/configuration. Independently admitted matching events do not beco
 helper completion proof. Review caught replaceable-method and mutable-code bypasses;
 pre-invocation dispatch checks and regression tests resolve them. Verified installation,
 archive/recovery/authority composition and the full operational profile are unfinished.
-Rust authority checkpoint `85c4c1d1b3c41de2f3f50b241ea4bb5576181659` passed scoped
-independent review, 131 all-feature tests, all 19 required fresh native execution-store
-gates with actual PostgreSQL, and all-target Rust1.86 Clippy. Guarded checkpoint loads
+Rust authority checkpoint `9da236c98243d5644d282dd6f61f169f9c64d4c6` passed the full
+pinned all-feature run of 131 tests with actual PostgreSQL. Its output-only correction
+`85c4c1d1b3c41de2f3f50b241ea4bb5576181659` passed scoped independent review,
+all 19 required fresh native execution-store gates with actual PostgreSQL,
+all-target Rust1.86 Clippy and all four CI checks. Guarded checkpoint loads
 and conflict-return bytes share the same validated native snapshot; immutable allocation
 binds original owner bytes/digest. Real staged-write failure and SIGKILL before/after
 commit use the same production native SQL; fresh reopen verifies retained replay.

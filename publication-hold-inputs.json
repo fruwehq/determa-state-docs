@@ -3,7 +3,7 @@
   "inputs": {
     ".github/workflows/docs.yml": "98feb6fb55f8f94a373b867e1d8df881ae76a7ecc85bd719e374f85f3666be39",
     "Makefile": "b45013c9f49a46d8674279c9c510b21662c30f7d442842143c296ce08a067cc6",
-    "PUBLICATION_MANIFEST.md": "eae476a7ab68526d6bb7e44a986567c66e011318d48328a4beb24fdf66ab12cd",
+    "PUBLICATION_MANIFEST.md": "7eeb0fe65d466c58c61915aa82efe11857d8388035230b986f3dd89c6a89ae6d",
     "STATE_VERSION": "d915cc95d6ca8f47ae297713ed46d4e5c5d99ddd29fc3c61e263bdf305f2b5b0",
     "audit/packages/python-native-interim.json": "b5a263ce51f26cf15c3dcb2bc09acea9de3794b14a00fc3a9f4fb904ab8cf129",
     "audit/packages/rust-native-interim.json": "f920c990b2ea3fbc8f79eaa45cefe986b60eb3c67aa8b1059a518ad1fd9d9f65",
