@@ -51,7 +51,7 @@ type errors before the machine runs.
 Install the unreleased candidate from its exact public source commit:
 
 ```sh
-python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@61fd77ed2e73365e80739d6d99c50c54fc6f0da6"
 ```
 
 The complete program is below. `create` returns a queue-bearing aggregate.

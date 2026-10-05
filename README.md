@@ -19,7 +19,7 @@ Every chapter is ordinary Markdown:
 
 This repository explains and demonstrates Determa State. The
 [specification](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md) and
-[conformance suite](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82)
+[conformance suite](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1)
 remain normative.
 
 Independent, fully working real-world applications live in

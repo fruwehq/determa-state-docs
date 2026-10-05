@@ -74,6 +74,7 @@ def transport(endpoint, request):
 client = PublicHostClient(root / "client.db", {
     "selected": EndpointBinding("local-tutorial", "tutorial")
 }, transport)
+client.setup_schema()
 request = {
     "protocol": "determa.execution_host", "protocol_version": 1,
     "scope_binding_identity": None, "operation": "create", "operation_id": "tutorial-create",
@@ -95,9 +96,9 @@ client = PublicHostClient(root / "client.db", {
     "selected": EndpointBinding("a-different-endpoint", "a-different-scope")
 }, transport)
 receipt = client.receipt("tutorial-create")
-assert receipt["value"]["outcome"] == "retained"
+assert receipt["value"]["result"]["retention"] == "retained"
 recovered = client.retry("tutorial-create")
-assert recovered == receipt["value"]["response"]
+assert recovered == receipt["value"]["result"]["saved_response"]
 assert recovered["status"] == "committed"
 checkpoint = recovered["value"]["result"]["checkpoint"]
 assert checkpoint["execution_checkpoint_schema_version"] == 1
