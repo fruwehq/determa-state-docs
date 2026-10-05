@@ -2,7 +2,7 @@
 
 The pure Determa State engine handles one delivery and returns the next aggregate. In
 many applications that is exactly the right boundary: the application already owns its
-database transaction and queue. Determa State 0.2.0 also provides an optional
+database transaction and queue. The unreleased Determa State 0.3.0 candidate provides an optional
 `ExecutionHost` for applications that want a portable, durable inbox, state, receipts,
 and outbox around that same pure core.
 
@@ -25,8 +25,11 @@ mkdir determa-checkpoint-tutorial
 cd determa-checkpoint-tutorial
 python -m venv .venv
 . .venv/bin/activate
-python -m pip install determa-state==0.2.0
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
 ```
+
+The command selects the exact public candidate commit. There is no published 0.3.0
+package.
 
 This tutorial uses SQLite so that stopping the Python process does not erase accepted
 work. The same host accepts an `ExecutionStore` object directly, so an application can
@@ -140,84 +143,91 @@ def open_host(machine_path, database_path):
 
 def delivery(checkpoint):
     aggregate = checkpoint["root_record"]["aggregate_state"]
+    envelope = ds.portable_envelope(
+        "increment", "counter:increment:1",
+        {"root": {
+            "root_instance_id": checkpoint["root_instance_id"],
+            "root_runtime_id": aggregate["root_runtime_id"],
+        }},
+        {"request_id": "request-1", "amount": 4},
+    )
     return {
-        "root_instance_id": checkpoint["root_instance_id"],
         "delivery_mode": "input",
-        "origin": {"kind": "host_input"},
-        "envelope": ds.portable_envelope(
-            "increment",
-            "counter:increment:1",
-            {
-                "root": {
-                    "root_instance_id": checkpoint["root_instance_id"],
-                    "root_runtime_id": aggregate["root_runtime_id"],
-                }
-            },
-            {"request_id": "request-1", "amount": 4},
-        ),
+        "envelope": envelope,
+        "envelope_digest": ds.delivery_request_digest(checkpoint["root_instance_id"], "input", envelope),
     }
+
+
+def ready_entry(checkpoint):
+    aggregate = checkpoint["root_record"]["aggregate_state"]
+    root = next(runtime for runtime in aggregate["runtimes"]
+                if runtime["runtime_id"] == aggregate["root_runtime_id"])
+    return root, root["ready_mailbox"][0]
 
 
 machine_path, database_path = sys.argv[1:]
 database = Path(database_path)
+# This tutorial owns this disposable database; do not erase production checkpoints.
 if database.exists():
     database.unlink()
 
 bundle, host = open_host(machine_path, database)
-created = host.create(
-    bundle,
-    machine_id="counter",
-    root_instance_id="counter-1",
-    creation_id="counter-1:create",
-    bindings={},
-)
+created = host.create_v1(bundle, "counter", "counter-1", "counter-1:create", {})
 assert created["result"] == "committed"
-
 checkpoint = host.read_checkpoint("counter-1").document
 candidate = delivery(checkpoint)
-pending = host.accept_delivery(
-    "counter-1",
-    candidate,
+accepted_response = host.admit_v1(
+    "counter-1", [candidate],
     expected_revision=checkpoint["revision"],
     expected_checkpoint_digest=checkpoint["execution_checkpoint_digest"],
 )
-assert pending["result"] == "pending"
+assert accepted_response["evidence"][0]["operation_kind"] == "acceptance"
 
-# Recreate the store and host to prove the accepted event was not process memory.
+# Reopen the store to prove admission persisted the complete mailbox entry.
 bundle, restarted = open_host(machine_path, database)
 accepted = restarted.read_checkpoint("counter-1").document
-assert len(accepted["pending_deliveries"]) == 1
-committed = restarted.process_pending_delivery(
-    "counter-1",
-    candidate,
+root, entry = ready_entry(accepted)
+identity = {
+    "event_id": entry["envelope"]["event_id"],
+    "envelope_digest": entry["envelope_digest"],
+    "acceptance_sequence": entry["acceptance_sequence"],
+    "queue_sequence": entry["queue_sequence"],
+}
+committed = restarted.process_ready_v1(
+    "counter-1", root["runtime_id"],
     expected_revision=accepted["revision"],
     expected_checkpoint_digest=accepted["execution_checkpoint_digest"],
+    **identity,
 )
-assert committed["result"] == "committed"
 assert committed["receipt"]["outcome"]["disposition"] == "handled"
+final = restarted.read_checkpoint("counter-1").document
+aggregate = final["root_record"]["aggregate_state"]
+root = next(runtime for runtime in aggregate["runtimes"]
+            if runtime["runtime_id"] == aggregate["root_runtime_id"])
+count = next(item["value"] for item in root["variables"]
+             if item["variable_declaration_pointer"].endswith("/count"))
+assert count == ["integer", "4"]
+assert final["revision"] == "2"
+assert not root["ready_mailbox"]
+assert len(final["operation_receipts"]) == 3
+assert len(final["pending_outbox_intents"]) == 1
 
-final = restarted.read_checkpoint("counter-1")
-assert final.aggregate is not None
-root = final.aggregate.state["runtimes"][
-    final.aggregate.state["root_runtime_id"]
-]
-assert root["scopes"]["root"]["count"] == 4
-assert final.document["revision"] == "2"
-assert len(final.document["pending_deliveries"]) == 0
-assert len(final.document["operation_receipts"]) == 2
-assert len(final.document["pending_outbox_intents"]) == 1
-
-replay = restarted.accept_delivery(
-    "counter-1",
-    candidate,
+replay = restarted.admit_v1(
+    "counter-1", [candidate],
     expected_revision=checkpoint["revision"],
     expected_checkpoint_digest=checkpoint["execution_checkpoint_digest"],
 )
-assert replay == committed
-print(
-    "revision=2; count=4; receipts=2; "
-    "pending=0; outbox=1; replay=committed"
+assert replay == accepted_response
+terminal_replay = restarted.process_ready_v1(
+    "counter-1", root["runtime_id"],
+    expected_revision=accepted["revision"],
+    expected_checkpoint_digest=accepted["execution_checkpoint_digest"],
+    **identity,
 )
+assert terminal_replay == committed["receipt"]
+assert restarted.read_checkpoint("counter-1").document == final
+print("revision=2; count=4; receipts=3; pending=0; outbox=1; replay=retained")
+
 ```
 
 Save it as `app.py`, then run:
@@ -229,26 +239,25 @@ python app.py counter.yaml state.db
 Expected output:
 
 ```text
-revision=2; count=4; receipts=2; pending=0; outbox=1; replay=committed
+revision=2; count=4; receipts=3; pending=0; outbox=1; replay=retained
 ```
 
-Creation commits revision `0`. Accepting the event commits revision `1` with the full
-envelope in `pending_deliveries`. Processing it commits revision `2`, consumes the
-pending item, adds a durable receipt, updates the aggregate, and adds the complete
-external intent to the outbox. Re-presenting the same event ID and bytes returns the
-committed receipt without calling the engine again. Reusing the ID with different
-content is a conflict.
+Creation commits revision `0` and a creation receipt. Admission commits revision `1`
+with the full envelope in the root runtime's `ready_mailbox` and an acceptance receipt.
+Processing commits revision `2`, consumes that head, adds a terminal receipt and updates
+the aggregate and outbox. Admission replay returns the retained acceptance evidence;
+processing replay returns the retained terminal receipt. Neither repeats the action.
+Reusing an event ID with different bytes is a conflict.
 
 ## 5. Choose the foreground boundary deliberately
 
-`accept_delivery` followed by `process_pending_delivery` is useful when acceptance and
-execution happen at different times. `foreground_process_delivery` performs both in
-one checkpoint transaction. Both paths have the same committed receipt and replay
-rules.
+`admit_v1` followed by `process_ready_v1` separates durable acceptance from execution.
+Processing names the ready head's complete identity, so a worker cannot accidentally
+process a different event. `process_delivery_v1` composes explicit migration, admission
+and processing in one store transaction when the application needs that boundary.
 
-An application may also skip `ExecutionHost` and call the pure `create`, `dispatch`,
-serialization, and migration functions inside its own transaction. The optional host
-is a library layer, not a daemon and not a required executable.
+An application may instead call the pure `create`, `admit`, `step`, restore and migration
+functions inside its own transaction. The optional host is a library layer.
 
 Every mutation uses the expected checkpoint revision and digest. A stale writer fails
 instead of replacing newer work. PostgreSQL applications can compose one checkpoint
@@ -290,42 +299,42 @@ Store scopes are host-selected trust boundaries. Scope identity and authorizatio
 not fields in portable machine, aggregate, event, intent, or checkpoint bytes. Equal
 portable identities may exist independently in two correctly isolated scopes.
 
-## 8. What 0.2.0 deliberately does not provide
+## 8. Optional capabilities require their own evidence
 
-The released checkpoint host does not provide a broker, delivery daemon, socket
-service, remote client, native effect handler, timer scheduler, backup/relocation
-protocol, or candidate-enabledness API. It also does not make active adapter calls
-serializable. Those are separate host concerns or future work, not implied by this
-tutorial.
+The 0.3.0 version-1 contracts describe optional extension registries, native effect
+handlers, worker authority, timer hosting, recovery and public host/client operations.
+This checkpoint example verifies only its local SQLite admission and processing
+boundary. A schema or profile name does not install those providers. Applications must
+select and verify the required providers before claiming a composed guarantee.
 
-Timer durability is reserved for future design. Today a machine can emit a declared
-scheduling intent and later accept a declared event from an external scheduler, as
-shown in [effects, faults, and hosting](effects-faults-hosting.md). No timer record is
-part of execution-checkpoint schema version 1.
+The core performs no network calls and starts no delivery daemon or scheduler. Active
+adapter calls remain outside portable checkpoints. A timer service can later submit a
+declared event; the core itself never advances a clock.
 
 ## Normative coverage
 
-This guide explains the released execution-checkpoint contract:
+- [§17](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#17-portable-execution-checkpoints-and-hosting-adapters)
+- [§17.1](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#171-scope)
+- [§17.2](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#172-closed-checkpoint-artifact)
+- [§17.3](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#173-durable-operation-receipts-and-replay)
+- [§17.4](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#174-aggregate-owned-admission-and-processing)
+- [§17.5](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#175-maintenance-migration-operations)
+- [§17.6](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#176-durable-outbox-lifecycle)
+- [§17.7](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#177-migration-audit-and-canonical-ordering)
+- [§17.8](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#178-replay-retention-and-root-lifecycle)
+- [§17.9](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#179-transaction-and-concurrency-ordering)
+- [§17.10](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1710-execution-store-registration-and-resolution)
+- [§17.11](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1711-execution-store-capabilities-and-composed-host-profiles)
+- [§17.12](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1712-exact-guarantee-boundary)
+- [§17.13](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1713-cluster-checkpoint-composition)
+- [§17.14](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1714-external-timer-durability)
 
-- [§17 portable execution checkpoints and hosting adapters](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#17-portable-execution-checkpoints-and-hosting-adapters)
-- [§17.1 scope and compatibility](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#171-scope-and-compatibility)
-- [§17.2 closed checkpoint artifact](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#172-closed-checkpoint-artifact)
-- [§17.3 durable operation receipts and replay](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#173-durable-operation-receipts-and-replay)
-- [§17.4 unified pending deliveries](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#174-unified-pending-deliveries)
-- [§17.5 maintenance-migration operations](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#175-maintenance-migration-operations)
-- [§17.6 durable outbox lifecycle](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#176-durable-outbox-lifecycle)
-- [§17.7 migration audit and canonical ordering](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#177-migration-audit-and-canonical-ordering)
-- [§17.8 replay retention and root lifecycle](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#178-replay-retention-and-root-lifecycle)
-- [§17.9 transaction and concurrency ordering](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#179-transaction-and-concurrency-ordering)
-- [§17.10 execution-store registration and resolution](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1710-execution-store-registration-and-resolution)
-- [§17.11 execution-store capabilities and composed host profiles](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1711-execution-store-capabilities-and-composed-host-profiles)
-- [§17.12 exact guarantee boundary](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1712-exact-guarantee-boundary)
-- [§17.13 cluster checkpoint composition](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1713-cluster-checkpoint-composition)
-- [§17.14 future timer durability](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1714-future-timer-durability)
+These current checkpoint cases cover native lifecycle, outbox, retention and v1 mailboxes:
 
-The released optional profile groups its low-level vectors into three user-facing
-scenarios:
-
-- [checkpoint-01 delivery lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/profiles/execution-checkpoint/checkpoint-01-delivery-lifecycle)
-- [checkpoint-02 outbox lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/profiles/execution-checkpoint/checkpoint-02-outbox-lifecycle)
-- [checkpoint-03 retention and root lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/profiles/execution-checkpoint/checkpoint-03-retention-and-root-lifecycle)
+- [checkpoint-01-native-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-01-native-lifecycle)
+- [checkpoint-02-native-outbox](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-02-native-outbox)
+- [checkpoint-03-native-retention](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-03-native-retention)
+- [checkpoint-04-version1-mailboxes](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-04-version1-mailboxes)
+- [checkpoint-05-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-05-spawned-host-trace)
+- [checkpoint-06-terminal-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-06-terminal-spawned-host-trace)
+- [checkpoint-07-complete-host-contract](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-07-complete-host-contract)

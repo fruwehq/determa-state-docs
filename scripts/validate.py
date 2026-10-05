@@ -92,102 +92,76 @@ LANGUAGE_BY_SUFFIX = {
     ".sh": "sh",
     ".toml": "toml",
 }
-PERSISTENCE_MIGRATION_SPECIFICATION_BY_CHAPTER = {
-    "docs/guides/persistence-and-migration.md": {"16.11"},
-    "docs/guides/persistence-migration-reference.md": {
-        "16",
-        "16.1",
-        "16.2",
-        "16.3",
-        "16.4",
-        "16.5",
-        "16.6",
-        "16.7",
-        "16.8",
-        "16.9",
-        "16.10",
-        "16.12",
-        "16.13",
-        "16.14",
-    },
-    "docs/guides/execution-checkpoint-hosting.md": {
-        "17",
-        "17.1",
-        "17.2",
-        "17.3",
-        "17.4",
-        "17.5",
-        "17.6",
-        "17.7",
-        "17.8",
-        "17.9",
-        "17.10",
-        "17.11",
-        "17.12",
-        "17.13",
-        "17.14",
-    },
-}
-PERSISTENCE_MIGRATION_CASES_BY_CHAPTER = {
-    "docs/guides/persistence-and-migration.md": {
-        "94-aggregate-wire-round-trip",
-        "96-definition-resolution",
-        "98-unchanged-definition-resume",
-        "100-explicit-active-state-remap",
-        "101-deleted-active-state-totality",
-        "106-counter-and-identity-preservation",
-        "108-migration-retry-and-rollback",
-        "109-migration-then-dispatch",
-    },
-    "docs/guides/persistence-migration-reference.md": {
-        "95-aggregate-wire-rejection",
-        "97-aggregate-package-attachments",
-        "99-compatible-definition-upgrade",
-        "102-variable-migration",
-        "103-history-migration",
-        "104-component-migration",
-        "105-owned-runtime-migration",
-        "107-migration-chain",
-        "110-completed-terminal-migration",
-        "111-faulted-terminal-migration",
-        "112-migration-security-limits",
-        "113-migration-failure-completeness",
-        "114-occurrence-local-transform-binding",
-        "115-target-identity-decimal-projections",
-    },
-}
-PERSISTENCE_MIGRATION_SPECIFICATION_ANCHORS = {
-    "16": "16-portable-persistence-and-definition-migration",
-    "16.1": "161-independent-artifact-identities",
-    "16.2": "162-canonical-values-and-aggregate-encoding",
-    "16.3": "163-complete-root-ownership-aggregate",
-    "16.4": "164-immutable-identity-and-mutable-definition-binding",
-    "16.5": "165-content-addressed-definition-registry",
-    "16.6": "166-aggregate-shape-fingerprint",
-    "16.7": "167-immutable-declarative-migration-descriptors",
-    "16.8": "168-exact-route-and-migration-algorithm",
-    "16.9": "169-total-transform-matrix",
-    "16.10": "1610-terminal-aggregates",
-    "16.11": "1611-lazy-transactional-host-ordering",
-    "16.12": "1612-failure-rollback-quarantine-and-audit",
-    "16.13": "1613-package-transport",
-    "16.14": "1614-security-and-resource-limits",
-    "17": "17-portable-execution-checkpoints-and-hosting-adapters",
-    "17.1": "171-scope-and-compatibility",
-    "17.2": "172-closed-checkpoint-artifact",
-    "17.3": "173-durable-operation-receipts-and-replay",
-    "17.4": "174-unified-pending-deliveries",
-    "17.5": "175-maintenance-migration-operations",
-    "17.6": "176-durable-outbox-lifecycle",
-    "17.7": "177-migration-audit-and-canonical-ordering",
-    "17.8": "178-replay-retention-and-root-lifecycle",
-    "17.9": "179-transaction-and-concurrency-ordering",
-    "17.10": "1710-execution-store-registration-and-resolution",
-    "17.11": "1711-execution-store-capabilities-and-composed-host-profiles",
-    "17.12": "1712-exact-guarantee-boundary",
-    "17.13": "1713-cluster-checkpoint-composition",
-    "17.14": "1714-future-timer-durability",
-}
+PERSISTENCE_MIGRATION_SPECIFICATION_BY_CHAPTER = {'docs/guides/execution-checkpoint-hosting.md': {'17',
+                                                 '17.1',
+                                                 '17.10',
+                                                 '17.11',
+                                                 '17.12',
+                                                 '17.13',
+                                                 '17.14',
+                                                 '17.2',
+                                                 '17.3',
+                                                 '17.4',
+                                                 '17.5',
+                                                 '17.6',
+                                                 '17.7',
+                                                 '17.8',
+                                                 '17.9'},
+ 'docs/guides/persistence-and-migration.md': {'16.11'},
+ 'docs/guides/persistence-migration-reference.md': {'16',
+                                                    '16.1',
+                                                    '16.10',
+                                                    '16.12',
+                                                    '16.13',
+                                                    '16.14',
+                                                    '16.15',
+                                                    '16.2',
+                                                    '16.3',
+                                                    '16.4',
+                                                    '16.5',
+                                                    '16.6',
+                                                    '16.7',
+                                                    '16.8',
+                                                    '16.9'}}
+PERSISTENCE_MIGRATION_CASES_BY_CHAPTER = {'docs/guides/persistence-and-migration.md': set(),
+ 'docs/guides/persistence-migration-reference.md': {'118-version1-persistence',
+                                                    '119-native-v1-aggregate-integrity',
+                                                    '120-native-v1-definition-package',
+                                                    '121-native-v1-migration-totality',
+                                                    '122-native-v1-migration-execution',
+                                                    '123-native-v1-migration-guards',
+                                                    '124-native-v1-occurrence-identity'}}
+PERSISTENCE_MIGRATION_SPECIFICATION_ANCHORS = {'16': '16-portable-persistence-and-definition-migration',
+ '16.1': '161-independent-artifact-identities',
+ '16.10': '1610-terminal-aggregates',
+ '16.11': '1611-lazy-transactional-host-ordering',
+ '16.12': '1612-failure-rollback-quarantine-and-audit',
+ '16.13': '1613-package-transport',
+ '16.14': '1614-security-and-resource-limits',
+ '16.15': '1615-queue-bearing-artifact-semantics',
+ '16.2': '162-canonical-values-and-aggregate-encoding',
+ '16.3': '163-complete-root-ownership-aggregate',
+ '16.4': '164-immutable-identity-and-mutable-definition-binding',
+ '16.5': '165-content-addressed-definition-registry',
+ '16.6': '166-aggregate-shape-fingerprint',
+ '16.7': '167-immutable-declarative-migration-descriptors',
+ '16.8': '168-exact-route-and-migration-algorithm',
+ '16.9': '169-total-transform-matrix',
+ '17': '17-portable-execution-checkpoints-and-hosting-adapters',
+ '17.1': '171-scope',
+ '17.10': '1710-execution-store-registration-and-resolution',
+ '17.11': '1711-execution-store-capabilities-and-composed-host-profiles',
+ '17.12': '1712-exact-guarantee-boundary',
+ '17.13': '1713-cluster-checkpoint-composition',
+ '17.14': '1714-external-timer-durability',
+ '17.2': '172-closed-checkpoint-artifact',
+ '17.3': '173-durable-operation-receipts-and-replay',
+ '17.4': '174-aggregate-owned-admission-and-processing',
+ '17.5': '175-maintenance-migration-operations',
+ '17.6': '176-durable-outbox-lifecycle',
+ '17.7': '177-migration-audit-and-canonical-ordering',
+ '17.8': '178-replay-retention-and-root-lifecycle',
+ '17.9': '179-transaction-and-concurrency-ordering'}
 COMPONENTS_AND_SPAWNING_SPECIFICATION = {"7", "7.1", "7.2", "7.3"}
 COMPONENTS_AND_SPAWNING_CASES = {
     "09-parallel-components",
@@ -1155,6 +1129,12 @@ def run_traces(destination: Path, conformance: Path) -> None:
                 "yaml=no; stop=completed"
             ),
         ),
+        (
+            destination / "python" / "mailbox_counter.py",
+            destination / "rust" / "mailbox-counter" / "Cargo.toml",
+            destination / "machines" / "mailbox-counter.yaml",
+            "deferred=retained; release=tail; acceptance=preserved; count=4",
+        ),
     ]
     for python_example, rust_manifest, argument, expected in traces:
         python_output = run(sys.executable, str(python_example), str(argument))
@@ -1288,7 +1268,7 @@ def run_traces(destination: Path, conformance: Path) -> None:
         "migrated=v2; status=completed"
     )
     persistence_rust_expected = (
-        "restored=v1; duplicate=ignored; outbox=1; "
+        "restored=v1; outbox=1; "
         "pure_failure=migration_totality_failure; migrated=v2; status=completed"
     )
     persistence_python_output = run(
@@ -1325,8 +1305,8 @@ def run_traces(destination: Path, conformance: Path) -> None:
         str(checkpoint_root / "state.db"),
     )
     checkpoint_expected = (
-        "revision=2; count=4; receipts=2; "
-        "pending=0; outbox=1; replay=committed"
+        "revision=2; count=4; receipts=3; "
+        "pending=0; outbox=1; replay=retained"
     )
     if checkpoint_output != checkpoint_expected:
         raise ValueError(
@@ -1339,15 +1319,10 @@ def run_traces(destination: Path, conformance: Path) -> None:
         str(destination / "persistence-reference" / "inspect_vectors.py"),
         str(conformance),
     )
-    reference_expected = (
-        "108 vectors; package=trusted transport; transforms=total and local; "
-        "terminal=preserved; limits=deterministic; decimals=lossless"
-    )
+    reference_expected = "154 core v1 vectors; queues=portable; migration=explicit; packages=trusted transport"
     if reference_output != reference_expected:
-        raise ValueError(
-            f"persistence reference inspection mismatch: {reference_output!r}"
-        )
-    print("persistence reference: all 108 vector properties inspected")
+        raise ValueError(f"persistence reference inspection mismatch: {reference_output!r}")
+    print("persistence reference: all 154 core v1 vector properties inspected")
 
 
 def run_released_persistence_gates(paths: dict[str, Path]) -> None:
@@ -1367,31 +1342,11 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
     environment["DETERMA_CONFORMANCE_DIR"] = str(conformance)
     environment["DETERMA_SPEC_DIR"] = str(specification)
     run(
-        sys.executable,
-        "-m",
-        "pytest",
-        str(python / "conformance" / "test_conformance.py::test_persistence_vectors"),
-        "-q",
-        cwd=ROOT,
-        env=environment,
-    )
-    run(
-        sys.executable,
-        "-m",
-        "pytest",
-        str(
-            python
-            / "conformance"
-            / "test_conformance.py::test_execution_checkpoint_profile"
-        ),
-        str(
-            python
-            / "conformance"
-            / "test_conformance.py::test_execution_checkpoint_artifact"
-        ),
-        "-q",
-        cwd=ROOT,
-        env=environment,
+        sys.executable, "-m", "pytest",
+        str(python / "conformance" / "test_conformance.py::test_version1_vector"),
+        str(python / "conformance" / "test_conformance.py::test_version1_artifact"),
+        str(python / "conformance" / "test_conformance.py::test_durable_host_vector"),
+        "-q", cwd=ROOT, env=environment,
     )
 
     rust_copy = ROOT / ".cache" / "rust-persistence-source"
@@ -1408,7 +1363,7 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
     conformance_link.symlink_to(conformance, target_is_directory=True)
     cargo_environment = os.environ.copy()
     cargo_environment["CARGO_TARGET_DIR"] = str(
-        ROOT / ".cache" / "rust-persistence-target-v2"
+        ROOT / ".cache" / "rust-persistence-target-v1"
     )
     run(
         "cargo",
@@ -1417,7 +1372,7 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
         "--manifest-path",
         str(rust_copy / "Cargo.toml"),
         "--test",
-        "persistence_conformance",
+        "native_v1_conformance",
         env=cargo_environment,
     )
     run(
@@ -1427,12 +1382,12 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
         "--manifest-path",
         str(rust_copy / "Cargo.toml"),
         "--test",
-        "checkpoint_conformance",
+        "durable_host_conformance",
         env=cargo_environment,
     )
     print(
-        "released persistence gates: all 108 persistence vectors and the complete "
-        "execution-checkpoint profile passed in Python and Rust"
+        "candidate persistence gates: all 162 v1 vectors and 142 durable-host "
+        "vectors passed in Python and Rust"
     )
 
 

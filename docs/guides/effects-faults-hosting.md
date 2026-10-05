@@ -1,12 +1,12 @@
 # Effects, faults, inspection, and hosting
 
-Determa State's portable core is a foreground transform. One call receives a bundle,
-prior aggregate state, and at most one envelope. It returns the next state, ordered
-emissions, a disposition, and any rejection or engine fault. It does not perform
+Determa State's portable core is a foreground transform. `create` builds the initial aggregate, `admit` accepts complete input deliveries,
+and `step` processes one selected runtime's ready-mailbox head. Processing returns
+the next aggregate, ordered emission evidence, a disposition, and any engine fault. It does not perform
 network I/O or retain hidden work.
 
 This chapter separates that portable result from the host that stores state, queues
-events, calls external services, schedules time, or exposes an MCP tool.
+accepted work, calls external services after commit, schedules time, or exposes an MCP tool.
 
 ## Model external work as a request and a later result
 
@@ -160,16 +160,52 @@ def root_target(state):
 
 
 def delivery(state, event, event_id, payload=None, correlation_id=None):
-    envelope = {
-        "event": event,
-        "event_id": event_id,
-        "target": root_target(state),
-        "payload": payload or {},
-    }
-    if correlation_id is not None:
-        envelope["correlation_id"] = correlation_id
-    return {"input": envelope}
+    return ds.portable_envelope(event, event_id, root_target(state), payload or {}, correlation_id=correlation_id)
 
+
+def process(bundle, state, envelope):
+    resolver = ds.MemoryArtifactResolver(definitions={bundle.fingerprint: bundle})
+    admitted = ds.admit(state, [{"delivery_mode": "input", "envelope": envelope,
+        "envelope_digest": ds.delivery_request_digest(state["root_instance_id"], "input", envelope)}], resolver)
+    if admitted["result"] != "accepted":
+        return admitted
+    return ds.step(admitted["state"], state["root_runtime_id"], resolver)
+
+
+def root_runtime(state):
+    return next(item for item in state["runtimes"] if item["runtime_id"] == state["root_runtime_id"])
+
+
+def decode(value):
+    import struct
+
+    tag = value[0]
+    if tag == "integer":
+        return int(value[1])
+    if tag == "float":
+        return struct.unpack("!d", bytes.fromhex(value[1]))[0]
+    if tag == "list":
+        return [decode(item) for item in value[1]]
+    if tag == "map":
+        return {name: decode(item) for name, item in value[1]}
+    return None if tag == "null" else value[1]
+
+
+def runtime_variables(runtime):
+    return {item["variable_declaration_pointer"].rsplit("/", 1)[1]: decode(item["value"])
+            for item in runtime["variables"]}
+
+
+def create_state(bundle, machine_id, instance_id):
+    result = ds.create(
+        bundle,
+        machine_id=machine_id,
+        root_instance_id=instance_id,
+        creation_id=f"{instance_id}:create",
+        bindings={},
+    )
+    assert result["status"] == "running"
+    return result["state"]
 
 def create(bundle, suffix):
     result = ds.create(
@@ -192,21 +228,20 @@ payment_input = delivery(
     "tutorial:payment:start",
     {"request_id": "payment-42", "amount": 1250},
 )
-payment = ds.dispatch(bundle, payment_prior, payment_input)
-retry = ds.dispatch(bundle, payment_prior, payment_input)
+payment = process(bundle, payment_prior, payment_input)
+retry = process(bundle, payment_prior, payment_input)
 assert payment == retry
 assert payment["disposition"] == "handled"
 assert payment["emissions"] == retry["emissions"]
 intent = payment["emissions"][0]
 assert intent["event"] == "payment_requested"
-assert intent["target"] == "external"
 assert intent["correlation_id"] == "payment-42"
-assert intent["payload"] == {"amount": 1250}
+assert decode(intent["payload"]) == {"amount": 1250}
 assert intent["effect_id"].startswith("sha256:")
-assert intent["sequence"] == 0
+assert intent["sequence"] == "0"
 payment_state = payment["state"]
 
-missing_correlation = ds.dispatch(
+missing_correlation = process(
     bundle,
     payment_state,
     delivery(
@@ -216,11 +251,11 @@ missing_correlation = ds.dispatch(
         {"receipt": "receipt-1"},
     ),
 )
-assert missing_correlation["disposition"] == "rejected"
+assert missing_correlation["result"] == "rejected"
 assert missing_correlation["rejection"] == {"code": "invalid_correlation"}
 assert missing_correlation["state"] == payment_state
 
-completed = ds.dispatch(
+completed = process(
     bundle,
     payment_state,
     delivery(
@@ -233,13 +268,12 @@ completed = ds.dispatch(
 )
 assert completed["status"] == "completed"
 completed_state = completed["state"]
-terminal_read = ds.dispatch(bundle, completed_state, None)
-assert terminal_read["state"] == completed_state
-assert terminal_read["disposition"] is None
-assert terminal_read["emissions"] == []
+# Reading the retained typed projection performs no engine call.
+assert root_runtime(completed_state)["status"] == "completed"
+assert root_runtime(completed_state)["ready_mailbox"] == []
 
 domain_prior = create(bundle, "domain")
-domain_started = ds.dispatch(
+domain_started = process(
     bundle,
     domain_prior,
     delivery(
@@ -250,7 +284,7 @@ domain_started = ds.dispatch(
     ),
 )
 domain_state = domain_started["state"]
-declined = ds.dispatch(
+declined = process(
     bundle,
     domain_state,
     delivery(
@@ -265,12 +299,12 @@ assert declined["status"] == "running"
 assert declined["disposition"] == "handled"
 assert declined["fault"] is None
 declined_state = declined["state"]
-declined_root = declined_state["runtimes"][declined_state["root_runtime_id"]]
-assert declined_root["active"] == ["root", "declined"]
-assert declined_root["scopes"]["root"]["outcome"] == "declined"
+declined_root = root_runtime(declined_state)
+assert declined_root["active_leaf_state_definition_pointers"] == ["/machines/0/root/states/declined"]
+assert runtime_variables(declined_root)["outcome"] == "declined"
 
 timer_prior = create(bundle, "timer")
-scheduled = ds.dispatch(
+scheduled = process(
     bundle,
     timer_prior,
     delivery(
@@ -284,7 +318,7 @@ schedule_intent = scheduled["emissions"][0]
 assert schedule_intent["event"] == "schedule_requested"
 assert schedule_intent["correlation_id"] == "timer-7"
 timer_state = scheduled["state"]
-elapsed = ds.dispatch(
+elapsed = process(
     bundle,
     timer_state,
     delivery(
@@ -297,7 +331,7 @@ elapsed = ds.dispatch(
 assert elapsed["status"] == "completed"
 
 fault_prior = create(bundle, "fault")
-faulted = ds.dispatch(
+faulted = process(
     bundle,
     fault_prior,
     delivery(fault_prior, "force_fault", "tutorial:fault:force"),
@@ -307,14 +341,13 @@ assert faulted["disposition"] == "faulted"
 assert faulted["emissions"] == []
 assert faulted["fault"]["code"] == "action_fault"
 fault_state = faulted["state"]
-fault_root = fault_state["runtimes"][fault_state["root_runtime_id"]]
-assert fault_root["scopes"]["root"]["attempts"] == 0
+fault_root = root_runtime(fault_state)
+assert runtime_variables(fault_root)["attempts"] == 0
 
-fault_read = ds.dispatch(bundle, fault_state, None)
-assert fault_read["state"] == fault_state
-assert fault_read["fault"] == faulted["fault"]
-assert fault_read["emissions"] == []
-blocked = ds.dispatch(
+assert fault_root["status"] == "faulted"
+assert fault_root["fault"]["code"] == faulted["fault"]["code"]
+assert fault_root["ready_mailbox"] == []
+blocked = process(
     bundle,
     fault_state,
     delivery(
@@ -324,7 +357,7 @@ blocked = ds.dispatch(
         {"request_id": "never", "amount": 1},
     ),
 )
-assert blocked["disposition"] == "rejected"
+assert blocked["result"] == "rejected"
 assert blocked["rejection"] == {"code": "invalid_instance_target"}
 assert blocked["state"] == fault_state
 
@@ -342,253 +375,155 @@ The Rust program consumes the same bundle and asserts the same portable observat
 ```toml
 [package]
 name = "determa-effects-faults-hosting"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.2.0"
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+serde_json = "1"
+serde_json_canonicalizer = "0.3"
+sha2 = "0.10"
 ```
 
 <!-- determa-example: rust/effects-faults-hosting/src/main.rs -->
 ```rust
-use determa_state::{
-    create, dispatch, load_bundle, Bindings, Delivery, Disposition, Envelope,
-    ResultStatus, Target, Value,
-};
-use std::{collections::BTreeMap, env, fs};
+use determa_state::{admit, create, load_bundle, restore_aggregate, step,
+    AdmissionDelivery, Aggregate, Bindings, Bundle, InMemoryDefinitionResolver,
+    QueueEnvelope, TypedValue};
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
+use std::{env, fs};
 
-fn root_target(state: &determa_state::AggregateState) -> Target {
-    Target::Root {
-        root_instance_id: state.root_instance_id.clone(),
-        root_runtime_id: state.root.runtime_id.clone(),
+fn load(path: &str) -> Bundle {
+    load_bundle(&fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn root(state: &Aggregate) -> &Value {
+    state.value()["runtimes"].as_array().unwrap().iter()
+        .find(|runtime| runtime["runtime_id"] == state.value()["root_runtime_id"]).unwrap()
+}
+
+fn variable(state: &Aggregate, name: &str) -> Option<Value> {
+    root(state)["variables"].as_array().unwrap().iter()
+        .filter(|variable| variable["variable_declaration_pointer"].as_str().unwrap()
+            .ends_with(&format!("/variables/{name}")))
+        .max_by_key(|variable| variable["variable_declaration_pointer"].as_str().unwrap().len())
+        .map(|variable| variable["value"].clone())
+}
+
+fn typed(value: &Value) -> TypedValue {
+    match value {
+        Value::Null => TypedValue::Null,
+        Value::Bool(value) => TypedValue::Boolean(*value),
+        Value::String(value) => TypedValue::String(value.clone()),
+        Value::Number(value) => if value.is_i64() { TypedValue::Integer(value.as_i64().unwrap()) } else { TypedValue::Float(value.as_f64().unwrap()) },
+        Value::Array(values) => TypedValue::List(values.iter().map(typed).collect()),
+        Value::Object(values) => TypedValue::Map(values.iter().map(|(name, value)| (name.clone(), typed(value))).collect()),
     }
 }
 
-fn input(
-    state: &determa_state::AggregateState,
-    event: &str,
-    event_id: &str,
-    payload: BTreeMap<String, Value>,
-    correlation_id: Option<&str>,
-) -> Delivery {
-    Delivery::Input(Envelope {
-        event: event.to_string(),
-        event_id: event_id.to_string(),
-        target: root_target(state),
-        payload,
-        correlation_id: correlation_id.map(str::to_string),
-    })
+fn decode(value: &Value) -> Value {
+    match value[0].as_str().unwrap() {
+        "null" => Value::Null,
+        "integer" => json!(value[1].as_str().unwrap().parse::<i64>().unwrap()),
+        "float" => json!(f64::from_bits(u64::from_str_radix(value[1].as_str().unwrap(), 16).unwrap())),
+        "list" => Value::Array(value[1].as_array().unwrap().iter().map(decode).collect()),
+        "map" => Value::Object(value[1].as_array().unwrap().iter().map(|item|
+            (item[0].as_str().unwrap().to_owned(), decode(&item[1]))).collect()),
+        _ => value[1].clone(),
+    }
 }
 
-fn create_state(bundle: &determa_state::Bundle, suffix: &str) -> determa_state::AggregateState {
-    create(
-        bundle,
-        "workflow",
-        &format!("tutorial:{suffix}"),
-        &format!("tutorial:{suffix}:create"),
-        &Bindings::default(),
-    )
-    .state
-    .expect("creation succeeds")
+fn logical(state: &Aggregate, name: &str) -> Value { decode(&variable(state, name).unwrap()) }
+
+fn restored(bundle: &Bundle, result: &Value) -> Aggregate {
+    let mut resolver = InMemoryDefinitionResolver::default();
+    resolver.insert(bundle.clone(), true);
+    restore_aggregate(&serde_json_canonicalizer::to_vec(&result["state"]).unwrap(), &resolver).unwrap()
 }
 
-fn text(value: &str) -> Value {
-    Value::String(value.to_string())
+fn initial(bundle: &Bundle, suffix: &str) -> Aggregate {
+    let instance = format!("tutorial:{suffix}");
+    create(bundle, "workflow", &instance, &format!("{instance}:create"), &Bindings::default()).unwrap()
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let machine_path = env::args().nth(1).expect("machine path");
-    let bundle = load_bundle(&fs::read_to_string(machine_path)?)?;
+fn input(state: &Aggregate, event: &str, event_id: &str, payload: Value, correlation: Option<&str>) -> QueueEnvelope {
+    QueueEnvelope { event: event.into(), event_id: event_id.into(), cause_id: event_id.into(),
+        source: json!({"host": true}), target: root(state)["target_identity"].clone(), payload: typed(&payload),
+        correlation_id: correlation.map(str::to_owned) }
+}
 
-    let payment_prior = create_state(&bundle, "payment");
-    let payment_input = input(
-        &payment_prior,
-        "start_payment",
-        "tutorial:payment:start",
-        BTreeMap::from([
-            ("request_id".to_string(), text("payment-42")),
-            ("amount".to_string(), Value::Int(1250)),
-        ]),
-        None,
-    );
-    let payment = dispatch(&bundle, &payment_prior, Some(payment_input.clone()));
-    let retry = dispatch(&bundle, &payment_prior, Some(payment_input));
-    assert_eq!(payment.disposition, Some(Disposition::Handled));
-    assert_eq!(payment.emissions, retry.emissions);
-    assert_eq!(payment.state, retry.state);
-    let intent = &payment.emissions[0];
-    assert_eq!(intent.event, "payment_requested");
-    assert_eq!(intent.target, Target::External);
-    assert_eq!(intent.correlation_id.as_deref(), Some("payment-42"));
-    assert_eq!(intent.payload["amount"], Value::Int(1250));
-    assert!(intent
-        .effect_id
-        .as_deref()
-        .is_some_and(|value| value.starts_with("sha256:")));
-    assert_eq!(intent.sequence.as_ref().map(ToString::to_string).as_deref(), Some("0"));
-    let payment_state = payment.state.expect("payment state");
+fn process(bundle: &Bundle, state: &Aggregate, envelope: QueueEnvelope) -> Result<(Aggregate, Value), determa_state::ArtifactError> {
+    let bytes = serde_json_canonicalizer::to_vec(&json!([
+        "determa-inbox-envelope-digest-1", "1", state.value()["root_instance_id"], "input", envelope,
+    ])).unwrap();
+    let accepted = admit(bundle, state, &[AdmissionDelivery { delivery_mode: "input".into(), envelope,
+        envelope_digest: format!("sha256:{:x}", Sha256::digest(bytes)) }])?;
+    let accepted = restored(bundle, &accepted);
+    let result = step(bundle, &accepted, accepted.value()["root_runtime_id"].as_str().unwrap())?;
+    Ok((restored(bundle, &result), result))
+}
 
-    let missing_correlation = dispatch(
-        &bundle,
-        &payment_state,
-        Some(input(
-            &payment_state,
-            "payment_succeeded",
-            "tutorial:payment:missing-correlation",
-            BTreeMap::from([("receipt".to_string(), text("receipt-1"))]),
-            None,
-        )),
-    );
-    assert_eq!(missing_correlation.disposition, Some(Disposition::Rejected));
-    assert_eq!(
-        missing_correlation
-            .rejection
-            .as_ref()
-            .map(|value| value.code.as_str()),
-        Some("invalid_correlation")
-    );
-    assert_eq!(missing_correlation.state.as_ref(), Some(&payment_state));
-
-    let completed = dispatch(
-        &bundle,
-        &payment_state,
-        Some(input(
-            &payment_state,
-            "payment_succeeded",
-            "tutorial:payment:succeeded",
-            BTreeMap::from([("receipt".to_string(), text("receipt-1"))]),
-            Some("payment-42"),
-        )),
-    );
-    assert_eq!(completed.status, ResultStatus::Completed);
-    let completed_state = completed.state.expect("completed state");
-    let terminal_read = dispatch(&bundle, &completed_state, None);
-    assert_eq!(terminal_read.state.as_ref(), Some(&completed_state));
-    assert_eq!(terminal_read.disposition, None);
-    assert!(terminal_read.emissions.is_empty());
-
-    let domain_prior = create_state(&bundle, "domain");
-    let domain_started = dispatch(
-        &bundle,
-        &domain_prior,
-        Some(input(
-            &domain_prior,
-            "start_payment",
-            "tutorial:domain:start",
-            BTreeMap::from([
-                ("request_id".to_string(), text("payment-declined")),
-                ("amount".to_string(), Value::Int(50)),
-            ]),
-            None,
-        )),
-    )
-    .state
-    .expect("domain started");
-    let declined = dispatch(
-        &bundle,
-        &domain_started,
-        Some(input(
-            &domain_started,
-            "payment_rejected",
-            "tutorial:domain:declined",
-            BTreeMap::from([("reason".to_string(), text("card_declined"))]),
-            Some("payment-declined"),
-        )),
-    );
-    assert_eq!(declined.status, ResultStatus::Running);
-    assert_eq!(declined.disposition, Some(Disposition::Handled));
-    assert!(declined.fault.is_none());
-    let declined_state = declined.state.expect("declined state");
-    assert_eq!(declined_state.root.config(), vec!["declined"]);
-    assert_eq!(
-        declined_state.root.visible_variables()["outcome"],
-        text("declined")
-    );
-
-    let timer_prior = create_state(&bundle, "timer");
-    let scheduled = dispatch(
-        &bundle,
-        &timer_prior,
-        Some(input(
-            &timer_prior,
-            "wait",
-            "tutorial:timer:wait",
-            BTreeMap::from([
-                ("request_id".to_string(), text("timer-7")),
-                ("delay_seconds".to_string(), Value::Int(30)),
-            ]),
-            None,
-        )),
-    );
-    assert_eq!(scheduled.emissions[0].event, "schedule_requested");
-    assert_eq!(
-        scheduled.emissions[0].correlation_id.as_deref(),
-        Some("timer-7")
-    );
-    let timer_state = scheduled.state.expect("timer state");
-    let elapsed = dispatch(
-        &bundle,
-        &timer_state,
-        Some(input(
-            &timer_state,
-            "schedule_elapsed",
-            "tutorial:timer:elapsed",
-            BTreeMap::new(),
-            Some("timer-7"),
-        )),
-    );
-    assert_eq!(elapsed.status, ResultStatus::Completed);
-
-    let fault_prior = create_state(&bundle, "fault");
-    let faulted = dispatch(
-        &bundle,
-        &fault_prior,
-        Some(input(
-            &fault_prior,
-            "force_fault",
-            "tutorial:fault:force",
-            BTreeMap::new(),
-            None,
-        )),
-    );
-    assert_eq!(faulted.status, ResultStatus::Faulted);
-    assert_eq!(faulted.disposition, Some(Disposition::Faulted));
-    assert!(faulted.emissions.is_empty());
-    assert_eq!(faulted.fault.as_ref().map(|fault| fault.code.as_str()), Some("action_fault"));
-    let fault_state = faulted.state.expect("fault state");
-    assert_eq!(fault_state.root.visible_variables()["attempts"], Value::Int(0));
-
-    let fault_read = dispatch(&bundle, &fault_state, None);
-    assert_eq!(fault_read.state.as_ref(), Some(&fault_state));
-    assert_eq!(fault_read.fault, faulted.fault);
-    assert!(fault_read.emissions.is_empty());
-    let blocked = dispatch(
-        &bundle,
-        &fault_state,
-        Some(input(
-            &fault_state,
-            "start_payment",
-            "tutorial:fault:blocked",
-            BTreeMap::from([
-                ("request_id".to_string(), text("never")),
-                ("amount".to_string(), Value::Int(1)),
-            ]),
-            None,
-        )),
-    );
-    assert_eq!(blocked.disposition, Some(Disposition::Rejected));
-    assert_eq!(
-        blocked.rejection.as_ref().map(|value| value.code.as_str()),
-        Some("invalid_instance_target")
-    );
-    assert_eq!(blocked.state.as_ref(), Some(&fault_state));
-
-    println!(
-        "effect=deterministic; correlation=enforced; domain=handled; \
-timer=host-event; fault=rolled-back; terminal=stable"
-    );
-    Ok(())
+fn main() {
+    let path = env::args().nth(1).expect("machine path");
+    let bundle = load(&path);
+    let prior = initial(&bundle, "payment");
+    let request = input(&prior, "start_payment", "tutorial:payment:start", json!({"request_id": "payment-42", "amount": 1250}), None);
+    let (payment_state, payment) = process(&bundle, &prior, request.clone()).unwrap();
+    let (_, retry) = process(&bundle, &prior, request).unwrap();
+    assert_eq!(payment, retry);
+    assert_eq!(payment["disposition"], "handled");
+    let intent = &payment["emissions"][0];
+    assert_eq!(intent["event"], "payment_requested");
+    assert_eq!(intent["correlation_id"], "payment-42");
+    assert_eq!(decode(&intent["payload"]), json!({"amount": 1250}));
+    assert!(intent["effect_id"].as_str().unwrap().starts_with("sha256:"));
+    assert_eq!(intent["sequence"], "0");
+    let before_refusal = payment_state.value().clone();
+    let missing = process(&bundle, &payment_state, input(&payment_state, "payment_succeeded",
+        "tutorial:payment:missing-correlation", json!({"receipt": "receipt-1"}), None)).unwrap_err();
+    assert_eq!(missing.code, "invalid_correlation");
+    assert_eq!(&before_refusal, payment_state.value());
+    let (completed_state, completed) = process(&bundle, &payment_state, input(&payment_state,
+        "payment_succeeded", "tutorial:payment:succeeded", json!({"receipt": "receipt-1"}), Some("payment-42"))).unwrap();
+    assert_eq!(completed["status"], "completed");
+    assert_eq!(root(&completed_state)["status"], "completed");
+    assert_eq!(root(&completed_state)["ready_mailbox"], json!([]));
+    let prior = initial(&bundle, "domain");
+    let (state, _) = process(&bundle, &prior, input(&prior, "start_payment", "tutorial:domain:start",
+        json!({"request_id": "payment-declined", "amount": 50}), None)).unwrap();
+    let (state, declined) = process(&bundle, &state, input(&state, "payment_rejected", "tutorial:domain:declined",
+        json!({"reason": "card_declined"}), Some("payment-declined"))).unwrap();
+    assert_eq!(declined["status"], "running");
+    assert_eq!(declined["disposition"], "handled");
+    assert_eq!(declined["fault"], Value::Null);
+    assert_eq!(root(&state)["active_leaf_state_definition_pointers"], json!(["/machines/0/root/states/declined"]));
+    assert_eq!(logical(&state, "outcome"), "declined");
+    let prior = initial(&bundle, "timer");
+    let (state, scheduled) = process(&bundle, &prior, input(&prior, "wait", "tutorial:timer:wait",
+        json!({"request_id": "timer-7", "delay_seconds": 30}), None)).unwrap();
+    assert_eq!(scheduled["emissions"][0]["event"], "schedule_requested");
+    assert_eq!(scheduled["emissions"][0]["correlation_id"], "timer-7");
+    let (_, elapsed) = process(&bundle, &state, input(&state, "schedule_elapsed", "tutorial:timer:elapsed",
+        json!({}), Some("timer-7"))).unwrap();
+    assert_eq!(elapsed["status"], "completed");
+    let prior = initial(&bundle, "fault");
+    let (state, faulted) = process(&bundle, &prior, input(&prior, "force_fault", "tutorial:fault:force", json!({}), None)).unwrap();
+    assert_eq!(faulted["status"], "faulted");
+    assert_eq!(faulted["disposition"], "faulted");
+    assert_eq!(faulted["fault"]["code"], "action_fault");
+    assert_eq!(faulted["emissions"], json!([]));
+    assert_eq!(logical(&state, "attempts"), json!(0));
+    assert_eq!(root(&state)["status"], "faulted");
+    assert_eq!(root(&state)["fault"]["code"], "action_fault");
+    assert_eq!(root(&state)["ready_mailbox"], json!([]));
+    let before = state.value().clone();
+    let blocked = process(&bundle, &state, input(&state, "start_payment", "tutorial:fault:blocked",
+        json!({"request_id": "never", "amount": 1}), None)).unwrap_err();
+    assert_eq!(blocked.code, "invalid_instance_target");
+    assert_eq!(&before, state.value());
+    println!("effect=deterministic; correlation=enforced; domain=handled; timer=host-event; fault=rolled-back; terminal=stable");
 }
 ```
 
@@ -615,9 +550,9 @@ The core result tells the host what happened:
 | Field | Meaning |
 |---|---|
 | `status` | Existing aggregate is `running`, `completed`, or `faulted`; rejected creation has no aggregate. |
-| `disposition` | Delivery was `handled`, `unhandled`, `rejected`, or `faulted`; a read-only call uses null. |
-| `state` | New aggregate state, or the exact prior state on rejection/unhandled/read-only processing. |
-| `emissions` | Ordered internal envelopes and external effect intents produced by this call. |
+| `disposition` | A `step` was `handled`, `deferred`, `unhandled`, `not_runnable`, `rejected`, or `faulted`. Creation and admission have separate result shapes. |
+| `state` | Resulting typed aggregate. Refusal preserves it; unhandled or faulted accepted processing consumes the selected mailbox entry. |
+| `emissions` | Ordered internal mailbox references and external effect intents from processing. Internal envelopes are already queued in the resulting aggregate. |
 | `fault` | Committed engine-fault record when this call exposes one. |
 | `rejection` | Pre-step validation code; rejection is not an engine fault. |
 
@@ -628,13 +563,12 @@ commits one diagnostic fault record, consumes one logical step sequence, and ret
 author intent from the failed step.
 
 After the root is `faulted`, ordinary delivery is rejected without changing the
-aggregate. After it is `completed`, ordinary delivery is likewise terminal. A null
-delivery is a read-only inspection call for either terminal state and returns unchanged
-state, no disposition, and no new emissions.
+aggregate. After it is `completed`, ordinary delivery is likewise terminal. Inspect a retained terminal aggregate directly or use the explicit inspection API.
+`step` cannot process a terminal runtime; there is no null-delivery dispatch API.
 
 The in-memory aggregate can be inspected for identities, status, active configuration,
-variables, ownership, history, counters, and fault records. This is an abstract
-logical-state API. Determa State 0.2.0 also defines portable aggregate serialization,
+variables, ownership, history, counters, and fault records. This is the complete version-1 typed logical-state projection, including explicit
+ready and deferred mailboxes. Determa State 0.3.0 also defines portable aggregate serialization,
 restoration, definition migration, and optional durable execution checkpoints. Start
 with the [durable checkpoint host](execution-checkpoint-hosting.md), build the
 lower-level database-backed host in the
@@ -646,7 +580,7 @@ complete transforms, terminal maintenance, and security limits in the
 
 | Boundary | Portable core | Host or plugin |
 |---|---|---|
-| Queue | Returns ordered immutable emissions. | Chooses ordering across calls, delivery attempts, retry, acknowledgement, deduplication, backpressure, and dead-letter policy. |
+| Queue | Owns explicit runtime mailbox placement and FIFO processing within the returned aggregate. | Owns accepted ingress, durable checkpoint commit, foreground runtime selection, external delivery, acknowledgement and dead-letter policy. |
 | Timer | Emits a declared scheduling request and later accepts a declared correlated input. | Owns the clock, scheduler, durability, cancellation, lateness, and duplicate policy. |
 | Database | Produces deterministic state and output intents for one foreground call. | Chooses storage representation and may transactionally combine its own inbox, aggregate storage, business data, and outbox. |
 | Broker | Gives every internal envelope an event ID and every external intent an effect ID. | Owns publishing, acknowledgement, redelivery, deduplication, and broker-native dead letters. |
@@ -659,13 +593,15 @@ and a delivered intent is not remote success.
 
 ## Know the format-1 completeness boundary
 
-Format 1 deliberately has no native clocks, timers, sleeps, queues, retries,
-acknowledgements, deferrals, dead-letter store, implicit parallel broadcast, shared
+Format 1 has explicit portable mailboxes and event deferral. It deliberately has no
+native clocks, timers, sleeps, external delivery/retry workers, broker acknowledgements,
+or native dead-letter store, implicit parallel broadcast, shared
 runtime variables, direct host-to-component delivery, cross-runtime transitions,
 remote or detached spawn, package imports, implicit definition hot-swap,
-standardized cross-language store/CLI protocol, root-fault recovery, root re-entry, distributed
-exactly-once transaction, hard real-time guarantee, or standardized plugin
-configuration.
+an execution CLI, root re-entry, distributed exactly-once transactions, or hard real-time
+guarantees. Optional version-1 registry, authority, effects, ingress, timer, archive,
+recovery and public-host contracts require their separately verified host capabilities;
+a contract's existence does not install a provider or run a background service.
 
 Those names are not reserved extension fields. A host may provide applicable behavior
 outside the core through declared events and plugins, but a format-1 machine cannot
@@ -676,36 +612,36 @@ aggregate inspection instead of executable observers.
 
 ## Normative coverage
 
-The exact released specification sections explained here are:
+The exact pinned specification sections explained here are:
 
-- [§9 deterministic identities and emissions](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#9-deterministic-identities-and-emissions);
-- [§10 faults and envelope disposition](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#10-faults-and-envelope-disposition);
-- [§10.1 engine faults](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#101-engine-faults);
-- [§10.2 contained runtime faults](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#102-contained-runtime-faults);
-- [§10.3 domain failures](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#103-domain-failures);
-- [§11 plugins and hosting](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#11-plugins-and-hosting);
-- [§11.1 queue plugins](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#111-queue-plugins);
-- [§11.2 timer extensions](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#112-timer-extensions);
-- [§11.3 external effects](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#113-external-effects);
-- [§11.4 hosting profiles](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#114-hosting-profiles);
-- [§12 inspection and visualization](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#12-inspection-and-visualization);
-- [§13 deliberately unsupported in format 1](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#13-deliberately-unsupported-in-format-1).
+- [§9 deterministic identities and emissions](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#9-deterministic-identities-and-emissions);
+- [§10 faults and envelope disposition](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#10-faults-and-envelope-disposition);
+- [§10.1 engine faults](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#101-engine-faults);
+- [§10.2 contained runtime faults](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#102-contained-runtime-faults);
+- [§10.3 domain failures](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#103-domain-failures);
+- [§11 plugins and hosting](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#11-plugins-and-hosting);
+- [§11.1 queue plugins](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#111-queue-plugins);
+- [§11.2 timer extensions](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#112-timer-extensions);
+- [§11.3 external effects](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#113-external-effects);
+- [§11.4 hosting profiles](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#114-hosting-profiles);
+- [§12 inspection and visualization](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#12-inspection-and-visualization);
+- [§13 deliberately unsupported in format 1](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#13-deliberately-unsupported-in-format-1).
 
-Released conformance examples:
+Pinned candidate conformance examples:
 
-- [16 timer extension](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/16-timer-extension)
-- [18 domain failure](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/18-domain-failure)
-- [19 public event contract](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/19-public-event-contract)
-- [20 invalid public correlation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/20-invalid-public-correlation)
-- [46 root boundary validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/46-root-boundary-validation)
-- [50 root fault terminal aggregate](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/50-root-fault-terminal-aggregate)
-- [67 bundle/state binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/67-bundle-state-binding)
-- [75 root initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/75-root-initialization-fault)
-- [76 invalid creation Unicode](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/76-invalid-create-unicode)
-- [77 invalid dispatch Unicode](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/77-invalid-dispatch-unicode)
-- [85 initialization emission rollback](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/85-initialization-emission-rollback)
-- [88 reserved payload validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/88-reserved-payload-validation)
-- [89 non-finite creation binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/89-nonfinite-creation-binding)
-- [90 host numeric normalization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/90-host-numeric-normalization)
-- [92 faulted-root/component precedence](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/92-faulted-root-component-precedence)
-- [93 optional correlation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/93-optional-correlation)
+- [16 timer extension](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/16-timer-extension)
+- [18 domain failure](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/18-domain-failure)
+- [19 public event contract](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/19-public-event-contract)
+- [20 invalid public correlation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/20-invalid-public-correlation)
+- [46 root boundary validation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/46-root-boundary-validation)
+- [50 root fault terminal aggregate](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/50-root-fault-terminal-aggregate)
+- [67 bundle/state binding](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/67-bundle-state-binding)
+- [75 root initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/75-root-initialization-fault)
+- [76 invalid creation Unicode](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/76-invalid-create-unicode)
+- [77 invalid dispatch Unicode](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/77-invalid-dispatch-unicode)
+- [85 initialization emission rollback](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/85-initialization-emission-rollback)
+- [88 reserved payload validation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/88-reserved-payload-validation)
+- [89 non-finite creation binding](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/89-nonfinite-creation-binding)
+- [90 host numeric normalization](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/90-host-numeric-normalization)
+- [92 faulted-root/component precedence](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/92-faulted-root-component-precedence)
+- [93 optional correlation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/93-optional-correlation)

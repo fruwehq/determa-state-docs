@@ -4,7 +4,7 @@ Determa State uses [CEL](https://cel.dev/) for guards and computed action values
 The machine file remains data: the engine parses and type-checks every expression when
 the bundle loads, then evaluates only the expressions selected by an event.
 
-This chapter uses the closed portable CEL profile from Determa State 0.2.0. It does not
+This chapter uses the closed portable CEL profile from the unreleased Determa State 0.3.0 candidate. It does not
 use host functions or implementation-specific CEL extensions.
 
 ## Start with ordered guards
@@ -338,8 +338,8 @@ Several details are intentional:
   reading the missing field.
 - The internal target is the nominal `worker` reference created by `spawn`; it is not
   an arbitrary string.
-- Each send is an immutable emission. Internal sends do not recursively dispatch;
-  the host explicitly delivers the returned internal envelope.
+- Each send is an immutable emission. Internal sends enqueue the target runtime's explicit mailbox;
+  the application calls `step` for that runtime to process the queued envelope.
 - `cancel` makes a null, disposed, or otherwise non-targetable owned reference a
   no-op. The following assignment clears the nullable holder.
 - `stop` is the final action. It completes this root instead of entering another
@@ -599,15 +599,16 @@ transition that reached the choice.
 `action_fault`; both external variables retain their old values.
 
 An ordinary action-expression error is `action_fault`; a guard or choice-guard error is
-`guard_fault`. The failing input remains caller-owned, the faulting step emits nothing,
-and a root fault is terminal.
+`guard_fault`. A failing step consumes its already admitted mailbox entry and emits nothing;
+action data rolls back, and a root fault is terminal. The aggregate records the
+fault and queue disposition explicitly.
 
 ## Run the complete trace with Python
 
 Install the pinned engine:
 
 ```sh
-python -m pip install determa-state==0.2.0
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
 ```
 
 <!-- determa-example: python/cel_actions.py -->
@@ -628,14 +629,40 @@ def root_target(state):
 
 
 def input_delivery(state, event, event_id, payload=None):
-    return {
-        "input": {
-            "event": event,
-            "event_id": event_id,
-            "target": root_target(state),
-            "payload": payload or {},
-        }
-    }
+    return ds.portable_envelope(event, event_id, root_target(state), payload or {})
+
+
+def process_delivery(bundle, state, envelope):
+    resolver = ds.MemoryArtifactResolver(definitions={bundle.fingerprint: bundle})
+    delivery = {"delivery_mode": "input", "envelope": envelope,
+        "envelope_digest": ds.delivery_request_digest(state["root_instance_id"], "input", envelope)}
+    admitted = ds.admit(state, [delivery], resolver)
+    assert admitted["result"] == "accepted"
+    return ds.step(admitted["state"], state["root_runtime_id"], resolver)
+
+
+def runtime(state, runtime_id):
+    return next(item for item in state["runtimes"] if item["runtime_id"] == runtime_id)
+
+
+def decode(value):
+    import struct
+
+    tag = value[0]
+    if tag == "integer":
+        return int(value[1])
+    if tag == "float":
+        return struct.unpack("!d", bytes.fromhex(value[1]))[0]
+    if tag == "list":
+        return [decode(item) for item in value[1]]
+    if tag == "map":
+        return {name: decode(item) for name, item in value[1]}
+    return None if tag == "null" else value[1]
+
+
+def runtime_variables(runtime):
+    return {item["variable_declaration_pointer"].rsplit("/", 1)[1]: decode(item["value"])
+            for item in runtime["variables"]}
 
 
 def create_state(bundle, machine_id, instance_id):
@@ -651,15 +678,14 @@ def create_state(bundle, machine_id, instance_id):
 
 
 def root_variables(state):
-    root = state["runtimes"][state["root_runtime_id"]]
-    return root["scopes"]["root"]
+    return runtime_variables(runtime(state, state["root_runtime_id"]))
 
 
 def check_guards(bundle):
     state = create_state(bundle, "guard_order", "tutorial-guards")
     observed = []
     for quantity, expected in ((3, "standard"), (20, "bulk"), (0, "empty")):
-        checked = ds.dispatch(
+        checked = process_delivery(
             bundle,
             state,
             input_delivery(
@@ -670,10 +696,10 @@ def check_guards(bundle):
             ),
         )
         state = checked["state"]
-        observed.append(state["runtimes"][state["root_runtime_id"]]["active"][-1])
+        observed.append(runtime(state, state["root_runtime_id"])["active_leaf_state_definition_pointers"][-1].rsplit("/", 1)[1])
         assert observed[-1] == expected
         if quantity != 0:
-            reset = ds.dispatch(
+            reset = process_delivery(
                 bundle,
                 state,
                 input_delivery(
@@ -692,7 +718,7 @@ def check_actions(bundle):
     worker_reference = variables["worker"]
     assert worker_reference["machine_id"] == "audit_worker"
 
-    refreshed = ds.dispatch(
+    refreshed = process_delivery(
         bundle,
         state,
         input_delivery(
@@ -706,7 +732,7 @@ def check_actions(bundle):
     state = refreshed["state"]
     assert root_variables(state)["rate"] == 1.5
 
-    evaluated = ds.dispatch(
+    evaluated = process_delivery(
         bundle,
         state,
         input_delivery(
@@ -717,10 +743,8 @@ def check_actions(bundle):
         ),
     )
     assert evaluated["disposition"] == "handled"
-    assert [emission["event"] for emission in evaluated["emissions"]] == [
-        "audit",
-        "quote_ready",
-    ]
+    assert evaluated["emissions"][0]["kind"] == "internal_mailbox"
+    assert evaluated["emissions"][1]["event"] == "quote_ready"
     state = evaluated["state"]
     variables = root_variables(state)
     assert variables["subtotal"] == 3.0
@@ -739,18 +763,20 @@ def check_actions(bundle):
 
     internal = evaluated["emissions"][0]
     external = evaluated["emissions"][1]
-    assert external["target"] == "external"
-    assert external["payload"]["total"] == 4.5
+    assert internal["event_id"] == runtime(state, worker_reference["instance_id"])["ready_mailbox"][0]["envelope"]["event_id"]
+    assert decode(external["payload"])["total"] == 4.5
     assert external["correlation_id"] == "quote-42"
 
-    audited = ds.dispatch(bundle, state, {"internal": internal})
+    # The internal emission is already admitted by the producing core step.
+    resolver = ds.MemoryArtifactResolver(definitions={bundle.fingerprint: bundle})
+    audited = ds.step(state, worker_reference["instance_id"], resolver)
     assert audited["disposition"] == "handled"
     state = audited["state"]
-    worker = state["runtimes"][worker_reference["instance_id"]]
-    audit_summary = worker["scopes"]["root"]["last_summary"]
+    worker = runtime(state, worker_reference["instance_id"])
+    audit_summary = runtime_variables(worker)["last_summary"]
     assert audit_summary == "audit:priority:vip:4.5"
 
-    released = ds.dispatch(
+    released = process_delivery(
         bundle,
         state,
         input_delivery(
@@ -764,7 +790,7 @@ def check_actions(bundle):
     assert root_variables(state)["worker"] is None
     assert len(state["runtimes"]) == 1
 
-    stopped = ds.dispatch(
+    stopped = process_delivery(
         bundle,
         state,
         input_delivery(state, "shutdown", "tutorial-actions:shutdown"),
@@ -776,7 +802,7 @@ def check_actions(bundle):
 
 def assert_fault(bundle, event, code, locator):
     state = create_state(bundle, "fault_lab", f"tutorial-fault:{event}")
-    result = ds.dispatch(
+    result = process_delivery(
         bundle,
         state,
         input_delivery(state, event, f"tutorial-fault:{event}:input"),
@@ -834,7 +860,7 @@ def check_faults(bundle):
         assert_fault(bundle, event, code, locator)
 
     state = create_state(bundle, "fault_lab", "tutorial-fault:refresh")
-    refreshed = ds.dispatch(
+    refreshed = process_delivery(
         bundle,
         state,
         input_delivery(
@@ -887,385 +913,188 @@ print(f"guards=standard,bulk,empty; total=4.5; audit={audit_summary}; faults=11"
 ```toml
 [package]
 name = "determa-cel-actions"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.2.0"
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+serde_json = "1"
+serde_json_canonicalizer = "0.3"
+sha2 = "0.10"
 ```
 
 <!-- determa-example: rust/cel-actions/src/main.rs -->
 ```rust
-use determa_state::{
-    create, dispatch, load_bundle, AggregateState, Bindings, Delivery, Disposition,
-    Envelope, LoadErrorCode, ResultStatus, Target, Value,
-};
-use std::{collections::BTreeMap, env, fs, path::Path};
+use determa_state::{admit, create, load_bundle, restore_aggregate, step,
+    AdmissionDelivery, Aggregate, Bindings, Bundle, InMemoryDefinitionResolver, LoadErrorCode,
+    QueueEnvelope, TypedValue};
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
+use std::{env, fs, path::Path};
 
-fn root_target(state: &AggregateState) -> Target {
-    Target::Root {
-        root_instance_id: state.root_instance_id.clone(),
-        root_runtime_id: state.root.runtime_id.clone(),
+fn load(path: &str) -> Bundle {
+    load_bundle(&fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn root(state: &Aggregate) -> &Value {
+    state.value()["runtimes"].as_array().unwrap().iter()
+        .find(|runtime| runtime["runtime_id"] == state.value()["root_runtime_id"]).unwrap()
+}
+
+fn variable(state: &Aggregate, name: &str) -> Option<Value> {
+    root(state)["variables"].as_array().unwrap().iter()
+        .filter(|variable| variable["variable_declaration_pointer"].as_str().unwrap()
+            .ends_with(&format!("/variables/{name}")))
+        .max_by_key(|variable| variable["variable_declaration_pointer"].as_str().unwrap().len())
+        .map(|variable| variable["value"].clone())
+}
+
+fn active(state: &Aggregate, path: &str) -> bool {
+    let base = root(state)["current_definition"]["machine"]["root_definition_pointer"].as_str().unwrap();
+    let pointer = if path == "root" { base.to_owned() }
+        else { format!("{base}/states/{}", path.replace('.', "/states/")) };
+    root(state)["active_state_activations"].as_array().unwrap().iter()
+        .any(|activation| activation["state_definition_pointer"] == pointer)
+}
+
+fn typed(value: &Value) -> TypedValue {
+    match value {
+        Value::Null => TypedValue::Null,
+        Value::Bool(value) => TypedValue::Boolean(*value),
+        Value::String(value) => TypedValue::String(value.clone()),
+        Value::Number(value) => if value.is_i64() { TypedValue::Integer(value.as_i64().unwrap()) } else { TypedValue::Float(value.as_f64().unwrap()) },
+        Value::Array(values) => TypedValue::List(values.iter().map(typed).collect()),
+        Value::Object(values) => TypedValue::Map(values.iter().map(|(name, value)| (name.clone(), typed(value))).collect()),
     }
 }
 
-fn input_delivery(
-    state: &AggregateState,
-    event: &str,
-    event_id: &str,
-    payload: BTreeMap<String, Value>,
-) -> Delivery {
-    Delivery::Input(Envelope {
-        event: event.to_string(),
-        event_id: event_id.to_string(),
-        target: root_target(state),
-        payload,
-        correlation_id: None,
-    })
+fn send(bundle: &Bundle, state: &Aggregate, event: &str, sequence: u8, payload: Value) -> (Aggregate, Value) {
+    let envelope = QueueEnvelope {
+        event: event.into(), event_id: format!("tutorial-core:{sequence}"),
+        cause_id: format!("tutorial-core:{sequence}"), source: json!({"host": true}),
+        target: root(state)["target_identity"].clone(), payload: typed(&payload), correlation_id: None,
+    };
+    let bytes = serde_json_canonicalizer::to_vec(&json!([
+        "determa-inbox-envelope-digest-1", "1", state.value()["root_instance_id"], "input", envelope,
+    ])).unwrap();
+    let delivery = AdmissionDelivery { delivery_mode: "input".into(), envelope,
+        envelope_digest: format!("sha256:{:x}", Sha256::digest(bytes)) };
+    let admitted = admit(bundle, state, &[delivery]).unwrap();
+    assert_eq!(admitted["result"], "accepted");
+    let mut resolver = InMemoryDefinitionResolver::default();
+    resolver.insert(bundle.clone(), true);
+    let accepted = restore_aggregate(&serde_json_canonicalizer::to_vec(&admitted["state"]).unwrap(), &resolver).unwrap();
+    let result = step(bundle, &accepted, state.value()["root_runtime_id"].as_str().unwrap()).unwrap();
+    
+    let next = restore_aggregate(&serde_json_canonicalizer::to_vec(&result["state"]).unwrap(), &resolver).unwrap();
+    (next, result)
 }
 
-fn create_state(
-    bundle: &determa_state::Bundle,
-    machine_id: &str,
-    instance_id: &str,
-) -> AggregateState {
-    let created = create(
-        bundle,
-        machine_id,
-        instance_id,
-        &format!("{instance_id}:create"),
-        &Bindings::default(),
-    );
-    assert_eq!(created.status, ResultStatus::Running);
-    created.state.expect("creation succeeds")
-}
-
-fn check_guards(bundle: &determa_state::Bundle) {
-    let mut state = create_state(bundle, "guard_order", "tutorial-guards");
-    let mut observed = Vec::new();
-    for (quantity, expected) in [(3, "standard"), (20, "bulk"), (0, "empty")] {
-        let checked = dispatch(
-            bundle,
-            &state,
-            Some(input_delivery(
-                &state,
-                "check",
-                &format!("tutorial-guards:check:{quantity}"),
-                BTreeMap::from([("quantity".to_string(), Value::Int(quantity))]),
-            )),
-        );
-        state = checked.state.expect("guard dispatch succeeds");
-        observed.push(state.root.config()[0].clone());
-        assert_eq!(observed.last().map(String::as_str), Some(expected));
-        if quantity != 0 {
-            let reset = dispatch(
-                bundle,
-                &state,
-                Some(input_delivery(
-                    &state,
-                    "reset",
-                    &format!("tutorial-guards:reset:{quantity}"),
-                    BTreeMap::new(),
-                )),
-            );
-            state = reset.state.expect("reset succeeds");
-        }
+fn decode(value: &Value) -> Value {
+    match value[0].as_str().unwrap() {
+        "null" => Value::Null,
+        "integer" => json!(value[1].as_str().unwrap().parse::<i64>().unwrap()),
+        "float" => json!(f64::from_bits(u64::from_str_radix(value[1].as_str().unwrap(), 16).unwrap())),
+        "list" => Value::Array(value[1].as_array().unwrap().iter().map(decode).collect()),
+        "map" => Value::Object(value[1].as_array().unwrap().iter().map(|item|
+            (item[0].as_str().unwrap().to_owned(), decode(&item[1]))).collect()),
+        _ => value[1].clone(),
     }
-    assert_eq!(observed, ["standard", "bulk", "empty"]);
 }
 
-fn check_actions(bundle: &determa_state::Bundle) -> String {
-    let mut state = create_state(bundle, "checkout", "tutorial-actions");
-    let worker_reference = match &state.root.visible_variables()["worker"] {
-        Value::InstanceReference(reference) => reference.clone(),
-        value => panic!("expected worker reference, found {value:?}"),
-    };
-    assert_eq!(worker_reference.machine_id, "audit_worker");
+fn logical(state: &Aggregate, name: &str) -> Value { decode(&variable(state, name).unwrap()) }
 
-    let refreshed = dispatch(
-        bundle,
-        &state,
-        Some(input_delivery(
-            &state,
-            "env",
-            "tutorial-actions:env",
-            BTreeMap::from([(
-                "changed".to_string(),
-                Value::Map(BTreeMap::from([(
-                    "rate".to_string(),
-                    Value::Float(1.5),
-                )])),
-            )]),
-        )),
-    );
-    assert_eq!(refreshed.disposition, Some(Disposition::Handled));
-    state = refreshed.state.expect("refresh succeeds");
-    assert_eq!(state.root.visible_variables()["rate"], Value::Float(1.5));
-
-    let evaluated = dispatch(
-        bundle,
-        &state,
-        Some(input_delivery(
-            &state,
-            "evaluate",
-            "tutorial-actions:evaluate",
-            BTreeMap::from([
-                ("quantity".to_string(), Value::Int(3)),
-                (
-                    "request_id".to_string(),
-                    Value::String("quote-42".to_string()),
-                ),
-            ]),
-        )),
-    );
-    assert_eq!(evaluated.disposition, Some(Disposition::Handled));
-    assert_eq!(
-        evaluated
-            .emissions
-            .iter()
-            .map(|emission| emission.event.as_str())
-            .collect::<Vec<_>>(),
-        ["audit", "quote_ready"]
-    );
-    let emissions = evaluated.emissions.clone();
-    state = evaluated.state.expect("evaluation succeeds");
-    let variables = state.root.visible_variables();
-    assert_eq!(variables["subtotal"], Value::Float(3.0));
-    assert_eq!(variables["total"], Value::Float(4.5));
-    assert_eq!(variables["has_note"], Value::Bool(false));
-    assert_eq!(variables["priority"], Value::Bool(true));
-    assert_eq!(variables["maps_equal"], Value::Bool(true));
-    assert_eq!(variables["unicode_rules_hold"], Value::Bool(true));
-    assert_eq!(
-        variables["rounded"],
-        Value::Float(9007199254740992.0)
-    );
-    assert_eq!(variables["truncated"], Value::Int(-2));
-    assert_eq!(
-        variables["tags"],
-        Value::List(vec![
-            Value::String("vip".to_string()),
-            Value::String("new".to_string()),
-            Value::String("calculated".to_string()),
-        ])
-    );
-    assert_eq!(variables["false_and_error"], Value::Bool(false));
-    assert_eq!(variables["error_and_false"], Value::Bool(false));
-    assert_eq!(variables["true_or_error"], Value::Bool(true));
-    assert_eq!(variables["error_or_true"], Value::Bool(true));
-
-    assert!(matches!(emissions[1].target, Target::External));
-    assert_eq!(emissions[1].payload["total"], Value::Float(4.5));
-    assert_eq!(emissions[1].correlation_id.as_deref(), Some("quote-42"));
-
-    let audited = dispatch(
-        bundle,
-        &state,
-        Some(Delivery::Internal(
-            emissions[0].envelope().expect("internal emission has envelope"),
-        )),
-    );
-    assert_eq!(audited.disposition, Some(Disposition::Handled));
-    state = audited.state.expect("audit delivery succeeds");
-    let worker = state
-        .root
-        .owned_instances
-        .iter()
-        .find(|owned| owned.reference == worker_reference)
-        .expect("worker remains owned");
-    let audit_summary = match &worker.runtime.visible_variables()["last_summary"] {
-        Value::String(value) => value.clone(),
-        value => panic!("expected audit summary, found {value:?}"),
-    };
-    assert_eq!(audit_summary, "audit:priority:vip:4.5");
-
-    let released = dispatch(
-        bundle,
-        &state,
-        Some(input_delivery(
-            &state,
-            "release_worker",
-            "tutorial-actions:release-worker",
-            BTreeMap::new(),
-        )),
-    );
-    assert_eq!(released.status, ResultStatus::Running);
-    state = released.state.expect("release returns running state");
-    assert_eq!(state.root.visible_variables()["worker"], Value::Null);
-    assert!(state.root.owned_instances.is_empty());
-
-    let stopped = dispatch(
-        bundle,
-        &state,
-        Some(input_delivery(
-            &state,
-            "shutdown",
-            "tutorial-actions:shutdown",
-            BTreeMap::new(),
-        )),
-    );
-    assert_eq!(stopped.status, ResultStatus::Completed);
-    let stopped_state = stopped.state.expect("stop returns completed state");
-    assert!(stopped_state.root.owned_instances.is_empty());
-    audit_summary
+fn restored(bundle: &Bundle, result: &Value) -> Aggregate {
+    let mut resolver = InMemoryDefinitionResolver::default();
+    resolver.insert(bundle.clone(), true);
+    restore_aggregate(&serde_json_canonicalizer::to_vec(&result["state"]).unwrap(), &resolver).unwrap()
 }
 
-fn assert_fault(
-    bundle: &determa_state::Bundle,
-    event: &str,
-    code: &str,
-    locator: &str,
-) {
-    let state = create_state(bundle, "fault_lab", &format!("tutorial-fault:{event}"));
-    let result = dispatch(
-        bundle,
-        &state,
-        Some(input_delivery(
-            &state,
-            event,
-            &format!("tutorial-fault:{event}:input"),
-            BTreeMap::new(),
-        )),
-    );
-    assert_eq!(result.status, ResultStatus::Faulted);
-    assert_eq!(result.disposition, Some(Disposition::Faulted));
-    let fault = result.fault.expect("fault record");
-    assert_eq!(fault.code, code);
-    assert_eq!(fault.source_locator, locator);
-    let faulted = result.state.expect("fault returns diagnostic state");
-    assert_eq!(faulted.root.visible_variables()["value"], Value::Int(7));
-    assert!(result.emissions.is_empty());
-}
-
-fn check_faults(bundle: &determa_state::Bundle) {
+fn main() {
+    let paths: Vec<String> = env::args().skip(1).collect();
+    let guards = load(&paths[0]);
+    let mut state = create(&guards, "guard_order", "tutorial-guards", "tutorial-guards:create", &Bindings::default()).unwrap();
+    for (index, (quantity, expected)) in [(3, "standard"), (20, "bulk"), (0, "empty")].iter().enumerate() {
+        state = send(&guards, &state, "check", index as u8 * 2, json!({"quantity": quantity})).0;
+        assert!(active(&state, expected));
+        if *quantity != 0 { state = send(&guards, &state, "reset", index as u8 * 2 + 1, json!({})).0; }
+    }
+    let actions = load(&paths[1]);
+    let mut state = create(&actions, "checkout", "tutorial-actions", "tutorial-actions:create", &Bindings::default()).unwrap();
+    let worker = logical(&state, "worker");
+    assert_eq!(worker["machine_id"], "audit_worker");
+    state = send(&actions, &state, "env", 10, json!({"changed": {"rate": 1.5}})).0;
+    assert_eq!(logical(&state, "rate"), json!(1.5));
+    let (next, result) = send(&actions, &state, "evaluate", 11, json!({"quantity": 3, "request_id": "quote-42"}));
+    state = next;
+    assert_eq!(result["disposition"], "handled");
+    assert_eq!(result["emissions"][0]["kind"], "internal_mailbox");
+    let external = &result["emissions"][1];
+    assert_eq!(external["event"], "quote_ready");
+    assert_eq!(decode(&external["payload"])["total"], json!(4.5));
+    assert_eq!(external["correlation_id"], "quote-42");
+    for (name, expected) in [
+        ("subtotal", json!(3.0)), ("total", json!(4.5)), ("has_note", json!(false)),
+        ("priority", json!(true)), ("maps_equal", json!(true)), ("unicode_rules_hold", json!(true)),
+        ("rounded", json!(9007199254740992.0)), ("truncated", json!(-2)),
+        ("tags", json!(["vip", "new", "calculated"])),
+        ("false_and_error", json!(false)), ("error_and_false", json!(false)),
+        ("true_or_error", json!(true)), ("error_or_true", json!(true)),
+    ] { assert_eq!(logical(&state, name), expected, "variable {name}"); }
+    // The producing step already queued the internal audit delivery.
+    let worker_id = worker["instance_id"].as_str().unwrap();
+    let audited = step(&actions, &state, worker_id).unwrap();
+    assert_eq!(audited["disposition"], "handled");
+    state = restored(&actions, &audited);
+    let runtime = state.value()["runtimes"].as_array().unwrap().iter()
+        .find(|runtime| runtime["runtime_id"] == worker_id).unwrap();
+    let summary = runtime["variables"].as_array().unwrap().iter()
+        .find(|variable| variable["variable_declaration_pointer"].as_str().unwrap().ends_with("/last_summary")).unwrap();
+    assert_eq!(decode(&summary["value"]), "audit:priority:vip:4.5");
+    state = send(&actions, &state, "release_worker", 12, json!({})).0;
+    assert_eq!(logical(&state, "worker"), Value::Null);
+    assert_eq!(state.value()["runtimes"].as_array().unwrap().len(), 1);
+    let (_, stopped) = send(&actions, &state, "shutdown", 13, json!({}));
+    assert_eq!(stopped["status"], "completed");
+    let faults = load(&paths[2]);
     let base = "/machines/0/root/states/running/on_events";
     let cases = [
-        (
-            "action_boom",
-            "action_fault",
-            format!("{base}/action_boom/action/1/assign/value"),
-        ),
-        (
-            "guard_boom",
-            "guard_fault",
-            format!("{base}/guard_boom/guard"),
-        ),
-        (
-            "payload_order",
-            "action_fault",
-            format!("{base}/payload_order/action/0/send/payload/alpha"),
-        ),
-        (
-            "correlation_order",
-            "action_fault",
-            format!("{base}/correlation_order/action/0/send/correlation_id"),
-        ),
-        (
-            "target_order",
-            "action_fault",
-            format!("{base}/target_order/action/0/send/targets/0/instance"),
-        ),
-        (
-            "and_boom",
-            "action_fault",
-            format!("{base}/and_boom/action/0/assign/flag"),
-        ),
-        (
-            "reversed_and_boom",
-            "action_fault",
-            format!("{base}/reversed_and_boom/action/0/assign/flag"),
-        ),
-        (
-            "or_boom",
-            "action_fault",
-            format!("{base}/or_boom/action/0/assign/flag"),
-        ),
-        (
-            "reversed_or_boom",
-            "action_fault",
-            format!("{base}/reversed_or_boom/action/0/assign/flag"),
-        ),
-        (
-            "choice_boom",
-            "guard_fault",
-            "/machines/0/root/states/deciding/choice/0/guard".to_string(),
-        ),
+        ("action_boom", "action_fault", format!("{base}/action_boom/action/1/assign/value")),
+        ("guard_boom", "guard_fault", format!("{base}/guard_boom/guard")),
+        ("payload_order", "action_fault", format!("{base}/payload_order/action/0/send/payload/alpha")),
+        ("correlation_order", "action_fault", format!("{base}/correlation_order/action/0/send/correlation_id")),
+        ("target_order", "action_fault", format!("{base}/target_order/action/0/send/targets/0/instance")),
+        ("and_boom", "action_fault", format!("{base}/and_boom/action/0/assign/flag")),
+        ("reversed_and_boom", "action_fault", format!("{base}/reversed_and_boom/action/0/assign/flag")),
+        ("or_boom", "action_fault", format!("{base}/or_boom/action/0/assign/flag")),
+        ("reversed_or_boom", "action_fault", format!("{base}/reversed_or_boom/action/0/assign/flag")),
+        ("choice_boom", "guard_fault", "/machines/0/root/states/deciding/choice/0/guard".to_owned()),
     ];
     for (event, code, locator) in cases {
-        assert_fault(bundle, event, code, &locator);
+        let instance = format!("tutorial-fault:{event}");
+        let state = create(&faults, "fault_lab", &instance, &format!("{instance}:create"), &Bindings::default()).unwrap();
+        let (diagnostic, result) = send(&faults, &state, event, 0, json!({}));
+        assert_eq!(result["status"], "faulted");
+        assert_eq!(result["disposition"], "faulted");
+        assert_eq!(result["fault"]["code"], code);
+        assert_eq!(result["fault"]["source_locator"], locator);
+        assert_eq!(logical(&diagnostic, "value"), json!(7));
+        assert_eq!(result["emissions"], json!([]));
     }
-
-    let state = create_state(bundle, "fault_lab", "tutorial-fault:refresh");
-    let refreshed = dispatch(
-        bundle,
-        &state,
-        Some(input_delivery(
-            &state,
-            "env",
-            "tutorial-fault:refresh:input",
-            BTreeMap::from([(
-                "changed".to_string(),
-                Value::Map(BTreeMap::from([(
-                    "region".to_string(),
-                    Value::String("west".to_string()),
-                )])),
-            )]),
-        )),
-    );
-    assert_eq!(refreshed.status, ResultStatus::Faulted);
-    let fault = refreshed.fault.expect("refresh fault");
-    assert_eq!(fault.code, "action_fault");
-    assert!(
-        fault
-            .source_locator
-            .ends_with("/on_events/env/action/0/refresh/only/0")
-    );
-    let faulted = refreshed.state.expect("refresh returns diagnostic state");
-    let variables = faulted.root.visible_variables();
-    assert_eq!(variables["token"], Value::String("old".to_string()));
-    assert_eq!(variables["region"], Value::String("east".to_string()));
-}
-
-fn check_invalid(paths: &[String]) -> Result<(), Box<dyn std::error::Error>> {
-    let expected = [
-        ("cel-host-extension.yaml", LoadErrorCode::CelProfileError),
-        ("cel-type-mismatch.yaml", LoadErrorCode::SemanticValidation),
-        (
-            "cel-lifecycle-event.yaml",
-            LoadErrorCode::SemanticValidation,
-        ),
-    ];
-    for path in paths {
-        let name = Path::new(path)
-            .file_name()
-            .and_then(|name| name.to_str())
-            .expect("UTF-8 fixture name");
-        let expected_code = expected
-            .iter()
-            .find(|(candidate, _)| *candidate == name)
-            .map(|(_, code)| code)
-            .expect("known invalid fixture");
-        let error = load_bundle(&fs::read_to_string(path)?).expect_err("bundle must fail");
-        assert_eq!(&error.code, expected_code);
+    let state = create(&faults, "fault_lab", "tutorial-fault:refresh", "tutorial-fault:refresh:create", &Bindings::default()).unwrap();
+    let (diagnostic, result) = send(&faults, &state, "env", 0, json!({"changed": {"region": "west"}}));
+    assert_eq!(result["status"], "faulted");
+    assert_eq!(result["fault"]["code"], "action_fault");
+    assert!(result["fault"]["source_locator"].as_str().unwrap().ends_with("/on_events/env/action/0/refresh/only/0"));
+    assert_eq!(logical(&diagnostic, "token"), "old");
+    assert_eq!(logical(&diagnostic, "region"), "east");
+    for path in &paths[3..] {
+        let name = Path::new(path).file_name().unwrap().to_str().unwrap();
+        let expected = if name == "cel-host-extension.yaml" { LoadErrorCode::CelProfileError } else { LoadErrorCode::SemanticValidation };
+        assert_eq!(load_bundle(&fs::read_to_string(path).unwrap()).unwrap_err().code, expected);
     }
-    Ok(())
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let paths = env::args().skip(1).collect::<Vec<_>>();
-    let guard_bundle = load_bundle(&fs::read_to_string(&paths[0])?)?;
-    let actions_bundle = load_bundle(&fs::read_to_string(&paths[1])?)?;
-    let faults_bundle = load_bundle(&fs::read_to_string(&paths[2])?)?;
-
-    check_guards(&guard_bundle);
-    let audit_summary = check_actions(&actions_bundle);
-    check_faults(&faults_bundle);
-    check_invalid(&paths[3..])?;
-    println!(
-        "guards=standard,bulk,empty; total=4.5; audit={audit_summary}; faults=11"
-    );
-    Ok(())
+    println!("guards=standard,bulk,empty; total=4.5; audit=audit:priority:vip:4.5; faults=11");
 }
 ```
 
@@ -1302,24 +1131,24 @@ language traces. The code above is the tested source, not pseudocode.
 ## Coverage
 
 This chapter covers the format-1 structured-action and CEL rules linked below. The
-matching Determa State v0.2.0 conformance cases are:
+matching pinned Determa State 0.3.0 conformance cases are:
 
-- [12 guarded list](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/12-guarded-list)
-- [17 action fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/17-action-fault)
-- [61 expression map order](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/61-expression-map-order)
-- [64 dynamic target expression order](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/64-dynamic-target-expression-order)
-- [65 portable CEL profile](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/65-portable-cel-profile)
-- [66 CEL profile rejections](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/66-cel-profile-rejections)
-- [68 CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/68-cel-and-nonabsorbed-error)
-- [69 CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/69-cel-or-nonabsorbed-error)
-- [70 dynamic target list order](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/70-dynamic-target-list-order)
-- [71 reversed CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/71-cel-reversed-and-nonabsorbed-error)
-- [72 reversed CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/72-cel-reversed-or-nonabsorbed-error)
-- [79 missing refresh field](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/79-missing-refresh-field)
+- [12 guarded list](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/12-guarded-list)
+- [17 action fault](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/17-action-fault)
+- [61 expression map order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/61-expression-map-order)
+- [64 dynamic target expression order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/64-dynamic-target-expression-order)
+- [65 portable CEL profile](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/65-portable-cel-profile)
+- [66 CEL profile rejections](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/66-cel-profile-rejections)
+- [68 CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/68-cel-and-nonabsorbed-error)
+- [69 CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/69-cel-or-nonabsorbed-error)
+- [70 dynamic target list order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/70-dynamic-target-list-order)
+- [71 reversed CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/71-cel-reversed-and-nonabsorbed-error)
+- [72 reversed CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/72-cel-reversed-or-nonabsorbed-error)
+- [79 missing refresh field](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/79-missing-refresh-field)
 
 Normative references:
-[structured actions §4.8](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#48-structured-actions),
-[static validation and CEL §5](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#5-static-validation-and-cel),
-[portable CEL profile](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#portable-cel-profile),
+[structured actions §4.8](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#48-structured-actions),
+[static validation and CEL §5](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#5-static-validation-and-cel),
+[portable CEL profile](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#portable-cel-profile),
 and
-[faults §10](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#10-faults-and-envelope-disposition).
+[faults §10](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#10-faults-and-envelope-disposition).

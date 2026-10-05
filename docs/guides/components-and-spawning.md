@@ -15,8 +15,10 @@ same-bundle machine dynamically.
 | External system | by its host | outside the engine | declared input and output events |
 
 Components and owned instances never share variables or receive implicit broadcasts.
-Author-directed communication uses an explicit `send`, returned as an immutable
-emission for the host to deliver in a later foreground call. Reserved lifecycle
+Author-directed communication uses an explicit `send`. Internal sends enqueue an
+immutable envelope in the target runtime's mailbox; the application selects that
+runtime in a later foreground `step`. External sends return committed intents for
+the host to deliver outside the core. Reserved lifecycle
 notifications for completion and failure are emitted automatically by the engine.
 
 ## 1. Place isolated components
@@ -425,14 +427,15 @@ action faults, the whole enclosing lifecycle step rolls back.
 
 ## 3. Run both traces with Python
 
-The Python trace creates each aggregate, delivers returned internal emissions
-explicitly, and inspects only public logical state.
+The Python trace creates each aggregate, admits host input, and selects queued
+runtime work explicitly. Internal sends already occupy the target mailbox; the trace
+calls `step` instead of re-admitting them. Earlier FIFO entries are consumed before
+a later selected delivery. All inspection reads the public version-1 typed projection.
 
 <!-- determa-example: python/components_and_spawning.py -->
 ```python
 from pathlib import Path
 import sys
-
 import determa.state as ds
 
 
@@ -446,55 +449,126 @@ def root_target(state):
 
 
 def input_delivery(state, event, event_id, payload=None, target=None):
-    return {
-        "input": {
-            "event": event,
-            "event_id": event_id,
-            "target": target or root_target(state),
-            "payload": payload or {},
-        }
-    }
+    return ds.portable_envelope(
+        event, event_id, target or root_target(state), payload or {}
+    )
 
 
-def internal_delivery(emission):
-    envelope = {
-        "event": emission["event"],
-        "event_id": emission["event_id"],
-        "target": emission["target"],
-        "payload": emission["payload"],
+def resolver(bundle):
+    return ds.MemoryArtifactResolver(definitions={bundle.fingerprint: bundle})
+
+
+def admit_delivery(bundle, state, envelope, mode="input"):
+    delivery = {
+        "delivery_mode": mode,
+        "envelope": envelope,
+        "envelope_digest": ds.delivery_request_digest(
+            state["root_instance_id"], mode, envelope
+        ),
     }
-    if emission.get("correlation_id") is not None:
-        envelope["correlation_id"] = emission["correlation_id"]
-    return {"internal": envelope}
+    return ds.admit(state, [delivery], resolver(bundle))
 
 
 def root_runtime(state):
-    return state["runtimes"][state["root_runtime_id"]]
+    return next(
+        (
+            item
+            for item in state["runtimes"]
+            if item["runtime_id"] == state["root_runtime_id"]
+        )
+    )
+
+
+def components(state):
+    return {
+        item["target_identity"]["component"]["component_id"]: item
+        for item in state["runtimes"]
+        if item["relation"]["kind"] == "component"
+    }
 
 
 def component(state, component_id):
-    root = root_runtime(state)
-    return state["runtimes"][root["components"][component_id]]
+    return components(state)[component_id]
 
 
 def owned(state):
     return [
-        runtime
-        for runtime in state["runtimes"].values()
-        if runtime["role"] == "spawned"
+        item
+        for item in state["runtimes"]
+        if item["relation"]["kind"] == "owned_spawned_instance"
     ]
 
 
-def dispatch_input(bundle, state, event, sequence, payload=None):
-    result = ds.dispatch(
-        bundle,
-        state,
-        input_delivery(
-            state,
-            event,
-            f"tutorial:{sequence}",
-            payload=payload,
-        ),
+def decode(value):
+    if value[0] == "integer":
+        return int(value[1])
+    if value[0] == "map":
+        return {name: decode(item) for name, item in value[1]}
+    if value[0] == "list":
+        return [decode(item) for item in value[1]]
+    return None if value[0] == "null" else value[1]
+
+
+def runtime_variables(runtime):
+    return {
+        item["variable_declaration_pointer"].rsplit("/", 1)[1]: decode(item["value"])
+        for item in runtime["variables"]
+    }
+
+
+def envelope_for_emission(state, emission):
+    return next(
+        (
+            entry["envelope"]
+            for item in state["runtimes"]
+            for entry in item["ready_mailbox"]
+            if entry["envelope"]["event_id"] == emission["event_id"]
+        )
+    )
+
+
+def event_for_emission(state, emission):
+    return (
+        emission["event"]
+        if "event" in emission
+        else envelope_for_emission(state, emission)["event"]
+    )
+
+
+def step_until(bundle, state, runtime_id, event_id):
+    while True:
+        runtime = next(
+            (item for item in state["runtimes"] if item["runtime_id"] == runtime_id)
+        )
+        head = runtime["ready_mailbox"][0]["envelope"]["event_id"]
+        result = ds.step(state, runtime_id, resolver(bundle))
+        state = result["state"]
+        if head == event_id:
+            return result
+
+
+def step_emission(bundle, state, emission):
+    target_runtime = next(
+        (
+            item
+            for item in state["runtimes"]
+            if any(
+                (
+                    entry["envelope"]["event_id"] == emission["event_id"]
+                    for entry in item["ready_mailbox"]
+                )
+            )
+        )
+    )
+    return step_until(bundle, state, target_runtime["runtime_id"], emission["event_id"])
+
+
+def send_input(bundle, state, event, sequence, payload=None):
+    envelope = input_delivery(state, event, f"tutorial:{sequence}", payload=payload)
+    admitted = admit_delivery(bundle, state, envelope)
+    assert admitted["result"] == "accepted"
+    result = step_until(
+        bundle, admitted["state"], state["root_runtime_id"], envelope["event_id"]
     )
     assert result["disposition"] == "handled"
     return result
@@ -513,54 +587,39 @@ def run_components(machine_path):
         },
     )
     state = created["state"]
-
-    started = dispatch_input(bundle, state, "begin", "components:begin")
+    started = send_input(bundle, state, "begin", "components:begin")
     state = started["state"]
     first_activation = started["emissions"]
-    assert [item["event"] for item in first_activation] == [
+    assert [event_for_emission(state, item) for item in first_activation] == [
         "component_work",
         "component_work",
     ]
-    assert component(state, "inventory")["scopes"]["root"]["handled"] == 0
-    assert component(state, "receipt")["scopes"]["root"]["handled"] == 0
-
-    inventory_work = ds.dispatch(
-        bundle, state, internal_delivery(first_activation[0])
-    )
+    stale_envelope = envelope_for_emission(state, first_activation[1])
+    assert runtime_variables(component(state, "inventory"))["handled"] == 0
+    assert runtime_variables(component(state, "receipt"))["handled"] == 0
+    inventory_work = step_emission(bundle, state, first_activation[0])
     state = inventory_work["state"]
-    assert component(state, "inventory")["scopes"]["root"]["handled"] == 1
-    assert component(state, "receipt")["scopes"]["root"]["handled"] == 0
-
-    refreshed = dispatch_input(
-        bundle,
-        state,
-        "refresh_inventory",
-        "components:refresh",
-        {"token": "token-2"},
+    assert runtime_variables(component(state, "inventory"))["handled"] == 1
+    assert runtime_variables(component(state, "receipt"))["handled"] == 0
+    refreshed = send_input(
+        bundle, state, "refresh_inventory", "components:refresh", {"token": "token-2"}
     )
     state = refreshed["state"]
-    applied = ds.dispatch(
-        bundle, state, internal_delivery(refreshed["emissions"][0])
-    )
+    applied = step_emission(bundle, state, refreshed["emissions"][0])
     state = applied["state"]
-    assert component(state, "inventory")["scopes"]["root"]["token"] == "token-2"
-    assert component(state, "receipt")["scopes"]["root"]["token"] == "token-1"
-
-    restarted = dispatch_input(bundle, state, "restart", "components:restart")
+    assert runtime_variables(component(state, "inventory"))["token"] == "token-2"
+    assert runtime_variables(component(state, "receipt"))["token"] == "token-1"
+    restarted = send_input(bundle, state, "restart", "components:restart")
     state = restarted["state"]
-    assert root_runtime(state)["components"] == {}
-    second_activation = dispatch_input(
-        bundle, state, "begin", "components:begin-again"
-    )
+    assert components(state) == {}
+    second_activation = send_input(bundle, state, "begin", "components:begin-again")
     state = second_activation["state"]
-
-    stale = ds.dispatch(bundle, state, internal_delivery(first_activation[1]))
-    assert stale["disposition"] == "rejected"
-    assert stale["rejection"]["code"] == "inactive_component_target"
+    stale = admit_delivery(bundle, state, stale_envelope, "internal")
+    assert stale["result"] == "rejected"
+    assert stale["rejection"]["code"] == "invalid_instance_target"
     assert stale["state"] == state
-
     current_inventory = component(state, "inventory")
-    direct_host = ds.dispatch(
+    direct_host = admit_delivery(
         bundle,
         state,
         input_delivery(
@@ -573,44 +632,32 @@ def run_components(machine_path):
                     "owner_runtime_id": state["root_runtime_id"],
                     "component_id": "inventory",
                     "component_runtime_id": current_inventory["runtime_id"],
-                    "activation_sequence": current_inventory[
-                        "component_activation_sequence"
-                    ],
+                    "activation_sequence": current_inventory["target_identity"][
+                        "component"
+                    ]["activation_sequence"],
                 }
             },
         ),
     )
-    assert direct_host["disposition"] == "rejected"
+    assert direct_host["result"] == "rejected"
     assert direct_host["rejection"]["code"] == "invalid_instance_target"
     assert direct_host["state"] == state
-
-    left = dispatch_input(
+    left = send_input(
         bundle, state, "finish_inventory", "components:finish-inventory"
     )
-    left_done = ds.dispatch(
-        bundle, left["state"], internal_delivery(left["emissions"][0])
-    )
+    left_done = step_emission(bundle, left["state"], left["emissions"][0])
     state = left_done["state"]
     assert component(state, "inventory")["status"] == "completed"
     assert component(state, "receipt")["status"] == "running"
-
-    right = dispatch_input(
-        bundle, state, "finish_receipt", "components:finish-receipt"
-    )
-    right_done = ds.dispatch(
-        bundle, right["state"], internal_delivery(right["emissions"][0])
-    )
-    assert [item["event"] for item in right_done["emissions"]] == [
-        "determa.component_completed",
-        "done",
-    ]
-    finished = ds.dispatch(
-        bundle,
-        right_done["state"],
-        internal_delivery(right_done["emissions"][1]),
-    )
+    right = send_input(bundle, state, "finish_receipt", "components:finish-receipt")
+    right_done = step_emission(bundle, right["state"], right["emissions"][0])
+    assert [
+        event_for_emission(right_done["state"], item)
+        for item in right_done["emissions"]
+    ] == ["determa.component_completed", "done"]
+    finished = step_emission(bundle, right_done["state"], right_done["emissions"][1])
     assert finished["status"] == "completed"
-    assert root_runtime(finished["state"])["components"] == {}
+    assert components(finished["state"]) == {}
     return "components: isolated, refreshed, stale target rejected, completed"
 
 
@@ -624,70 +671,47 @@ def run_owned(machine_path):
         bindings={},
     )
     state = created["state"]
-
-    prepared = dispatch_input(bundle, state, "prepare", "owned:prepare")
+    prepared = send_input(bundle, state, "prepare", "owned:prepare")
     state = prepared["state"]
     assert len(owned(state)) == 4
-    root_worker = root_runtime(state)["scopes"]["root"]["root_worker"]
+    root_worker = runtime_variables(root_runtime(state))["root_worker"]
     assert set(root_worker) == {
         "root_instance_id",
         "instance_id",
         "machine_id",
         "machine_version",
     }
-
-    requested = dispatch_input(
-        bundle, state, "request_bound_work", "owned:request"
-    )
-    worked = ds.dispatch(
-        bundle, requested["state"], internal_delivery(requested["emissions"][0])
-    )
-    replied = ds.dispatch(
-        bundle, worked["state"], internal_delivery(worked["emissions"][0])
-    )
+    requested = send_input(bundle, state, "request_bound_work", "owned:request")
+    worked = step_emission(bundle, requested["state"], requested["emissions"][0])
+    replied = step_emission(bundle, worked["state"], worked["emissions"][0])
     state = replied["state"]
-    assert root_runtime(state)["scopes"]["root"]["reply_count"] == 1
-
-    left = dispatch_input(bundle, state, "leave", "owned:leave")
+    assert runtime_variables(root_runtime(state))["reply_count"] == 1
+    left = send_input(bundle, state, "leave", "owned:leave")
     state = left["state"]
-    assert [item["payload"]["label"] for item in left["emissions"]] == [
+    assert [decode(item["payload"])["label"] for item in left["emissions"]] == [
         "scoped-one",
         "scoped-two",
     ]
     assert len(owned(state)) == 2
-
-    finish_request = dispatch_input(
-        bundle, state, "finish_bound", "owned:finish-bound"
+    finish_request = send_input(bundle, state, "finish_bound", "owned:finish-bound")
+    completed = step_emission(
+        bundle, finish_request["state"], finish_request["emissions"][0]
     )
-    completed = ds.dispatch(
-        bundle,
-        finish_request["state"],
-        internal_delivery(finish_request["emissions"][0]),
-    )
-    assert [item["event"] for item in completed["emissions"]] == [
-        "child_exited",
-        "done",
-    ]
+    assert [
+        event_for_emission(completed["state"], item) for item in completed["emissions"]
+    ] == ["child_exited", "done"]
     state = completed["state"]
     assert len(owned(state)) == 1
-    completion_seen = ds.dispatch(
-        bundle, state, internal_delivery(completed["emissions"][1])
-    )
+    completion_seen = step_emission(bundle, state, completed["emissions"][1])
     state = completion_seen["state"]
-    assert root_runtime(state)["scopes"]["root"]["completed_count"] == 1
-
-    cleaned = dispatch_input(
-        bundle, state, "cleanup_references", "owned:cleanup"
-    )
+    assert runtime_variables(root_runtime(state))["completed_count"] == 1
+    cleaned = send_input(bundle, state, "cleanup_references", "owned:cleanup")
     state = cleaned["state"]
-    assert root_runtime(state)["scopes"]["root"]["cleanup_count"] == 1
+    assert runtime_variables(root_runtime(state))["cleanup_count"] == 1
     assert len(owned(state)) == 1
-
-    owner_done = dispatch_input(
-        bundle, state, "finish_owner", "owned:finish-owner"
-    )
+    owner_done = send_input(bundle, state, "finish_owner", "owned:finish-owner")
     assert owner_done["status"] == "completed"
-    assert [item["payload"]["label"] for item in owner_done["emissions"]] == [
+    assert [decode(item["payload"])["label"] for item in owner_done["emissions"]] == [
         "unbound"
     ]
     assert owned(owner_done["state"]) == []
@@ -696,7 +720,6 @@ def run_owned(machine_path):
 
 if len(sys.argv) != 3:
     raise SystemExit("usage: components_and_spawning.py COMPONENTS_YAML OWNED_YAML")
-
 print(run_components(sys.argv[1]))
 print(run_owned(sys.argv[2]))
 ```
@@ -717,438 +740,214 @@ emission order, stale-target rejection, and final output.
 ```toml
 [package]
 name = "determa-components-spawning"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.2.0"
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+serde_json = "1"
+serde_json_canonicalizer = "0.3"
+sha2 = "0.10"
 ```
 
 <!-- determa-example: rust/components-spawning/src/main.rs -->
 ```rust
-use determa_state::{
-    create, dispatch, load_bundle, AggregateState, Bindings, Delivery, Disposition,
-    Emission, Envelope, RuntimeStatus, Target, Value,
-};
+use determa_state::{admit, create, load_bundle, restore_aggregate, step,
+    AdmissionDelivery, Aggregate, Bindings, Bundle, InMemoryDefinitionResolver, Value as NativeValue,
+    QueueEnvelope, TypedValue};
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, env, fs};
 
-fn root_target(state: &AggregateState) -> Target {
-    Target::Root {
-        root_instance_id: state.root_instance_id.clone(),
-        root_runtime_id: state.root.runtime_id.clone(),
+fn load(path: &str) -> Bundle {
+    load_bundle(&fs::read_to_string(path).unwrap()).unwrap()
+}
+
+fn root(state: &Aggregate) -> &Value {
+    state.value()["runtimes"].as_array().unwrap().iter()
+        .find(|runtime| runtime["runtime_id"] == state.value()["root_runtime_id"]).unwrap()
+}
+
+fn variable(state: &Aggregate, name: &str) -> Option<Value> {
+    root(state)["variables"].as_array().unwrap().iter()
+        .filter(|variable| variable["variable_declaration_pointer"].as_str().unwrap()
+            .ends_with(&format!("/variables/{name}")))
+        .max_by_key(|variable| variable["variable_declaration_pointer"].as_str().unwrap().len())
+        .map(|variable| variable["value"].clone())
+}
+
+fn typed(value: &Value) -> TypedValue {
+    match value {
+        Value::Null => TypedValue::Null,
+        Value::Bool(value) => TypedValue::Boolean(*value),
+        Value::String(value) => TypedValue::String(value.clone()),
+        Value::Number(value) => if value.is_i64() { TypedValue::Integer(value.as_i64().unwrap()) } else { TypedValue::Float(value.as_f64().unwrap()) },
+        Value::Array(values) => TypedValue::List(values.iter().map(typed).collect()),
+        Value::Object(values) => TypedValue::Map(values.iter().map(|(name, value)| (name.clone(), typed(value))).collect()),
     }
 }
 
-fn input(
-    state: &AggregateState,
-    event: &str,
-    event_id: &str,
-    payload: BTreeMap<String, Value>,
-) -> Delivery {
-    Delivery::Input(Envelope {
-        event: event.to_string(),
-        event_id: event_id.to_string(),
-        target: root_target(state),
-        payload,
-        correlation_id: None,
-    })
-}
-
-fn internal(emission: &Emission) -> Delivery {
-    Delivery::Internal(
-        emission
-            .envelope()
-            .expect("internal emission has an envelope"),
-    )
-}
-
-fn component<'a>(
-    state: &'a AggregateState,
-    component_id: &str,
-) -> &'a determa_state::format1::ComponentRuntime {
-    state
-        .root
-        .components
-        .iter()
-        .find(|item| item.component_id == component_id)
-        .expect("component is retained")
-}
-
-fn int_variable(
-    runtime: &determa_state::format1::RuntimeState,
-    name: &str,
-) -> i64 {
-    match runtime.visible_variables().get(name) {
-        Some(Value::Int(value)) => *value,
-        other => panic!("{name} is not an int: {other:?}"),
+fn decode(value: &Value) -> Value {
+    match value[0].as_str().unwrap() {
+        "null" => Value::Null,
+        "integer" => json!(value[1].as_str().unwrap().parse::<i64>().unwrap()),
+        "float" => json!(f64::from_bits(u64::from_str_radix(value[1].as_str().unwrap(), 16).unwrap())),
+        "list" => Value::Array(value[1].as_array().unwrap().iter().map(decode).collect()),
+        "map" => Value::Object(value[1].as_array().unwrap().iter().map(|item|
+            (item[0].as_str().unwrap().to_owned(), decode(&item[1]))).collect()),
+        _ => value[1].clone(),
     }
 }
 
-fn string_variable(
-    runtime: &determa_state::format1::RuntimeState,
-    name: &str,
-) -> String {
-    match runtime.visible_variables().get(name) {
-        Some(Value::String(value)) => value.clone(),
-        other => panic!("{name} is not a string: {other:?}"),
+fn logical(state: &Aggregate, name: &str) -> Value { decode(&variable(state, name).unwrap()) }
+
+fn restored(bundle: &Bundle, result: &Value) -> Aggregate {
+    let mut resolver = InMemoryDefinitionResolver::default();
+    resolver.insert(bundle.clone(), true);
+    restore_aggregate(&serde_json_canonicalizer::to_vec(&result["state"]).unwrap(), &resolver).unwrap()
+}
+
+fn component<'a>(state: &'a Aggregate, name: &str) -> &'a Value {
+    state.value()["runtimes"].as_array().unwrap().iter().find(|runtime|
+        runtime["target_identity"]["component"]["component_id"] == name).unwrap()
+}
+
+fn owned_count(state: &Aggregate) -> usize {
+    state.value()["runtimes"].as_array().unwrap().iter().filter(|runtime|
+        runtime["relation"]["kind"] == "owned_spawned_instance").count()
+}
+
+fn runtime_variable(runtime: &Value, name: &str) -> Value {
+    decode(&runtime["variables"].as_array().unwrap().iter().find(|variable|
+        variable["variable_declaration_pointer"].as_str().unwrap().ends_with(&format!("/variables/{name}"))).unwrap()["value"])
+}
+
+fn envelope_for(state: &Aggregate, emission: &Value) -> Value {
+    state.value()["runtimes"].as_array().unwrap().iter().flat_map(|runtime|
+        runtime["ready_mailbox"].as_array().unwrap().iter()).find(|entry|
+        entry["envelope"]["event_id"] == emission["event_id"]).unwrap()["envelope"].clone()
+}
+
+fn event_for(state: &Aggregate, emission: &Value) -> Value {
+    if emission.get("event").is_some() { emission["event"].clone() }
+    else { envelope_for(state, emission)["event"].clone() }
+}
+
+fn admission(bundle: &Bundle, state: &Aggregate, envelope: QueueEnvelope, mode: &str) -> Result<Value, determa_state::ArtifactError> {
+    let bytes = serde_json_canonicalizer::to_vec(&json!([
+        "determa-inbox-envelope-digest-1", "1", state.value()["root_instance_id"], mode, envelope,
+    ])).unwrap();
+    admit(bundle, state, &[AdmissionDelivery { delivery_mode: mode.into(), envelope,
+        envelope_digest: format!("sha256:{:x}", Sha256::digest(bytes)) }])
+}
+
+fn step_until(bundle: &Bundle, state: &Aggregate, runtime_id: &str, event_id: &str) -> (Aggregate, Value) {
+    let mut state = state.clone();
+    loop {
+        let runtime = state.value()["runtimes"].as_array().unwrap().iter()
+            .find(|runtime| runtime["runtime_id"] == runtime_id).unwrap();
+        let head = runtime["ready_mailbox"][0]["envelope"]["event_id"].as_str().unwrap().to_owned();
+        let result = step(bundle, &state, runtime_id).unwrap();
+        state = restored(bundle, &result);
+        if head == event_id { return (state, result); }
     }
 }
 
-fn handled_input(
-    bundle: &determa_state::Bundle,
-    state: &AggregateState,
-    event: &str,
-    event_id: &str,
-    payload: BTreeMap<String, Value>,
-) -> determa_state::CoreResult {
-    let result = dispatch(
-        bundle,
-        state,
-        Some(input(state, event, event_id, payload)),
-    );
-    assert_eq!(result.disposition, Some(Disposition::Handled));
-    result
+fn step_emission(bundle: &Bundle, state: &Aggregate, emission: &Value) -> (Aggregate, Value) {
+    let runtime = state.value()["runtimes"].as_array().unwrap().iter().find(|runtime|
+        runtime["ready_mailbox"].as_array().unwrap().iter().any(|entry|
+            entry["envelope"]["event_id"] == emission["event_id"])).unwrap();
+    step_until(bundle, state, runtime["runtime_id"].as_str().unwrap(), emission["event_id"].as_str().unwrap())
 }
 
-fn run_components(path: &str) -> String {
-    let bundle = load_bundle(&fs::read_to_string(path).expect("components bundle"))
-        .expect("valid components bundle");
-    let bindings = Bindings {
-        input: BTreeMap::from([(
-            "order_id".to_string(),
-            Value::String("ORD-42".to_string()),
-        )]),
-        external: BTreeMap::from([(
-            "inventory_token".to_string(),
-            Value::String("token-1".to_string()),
-        )]),
-    };
-    let created = create(
-        &bundle,
-        "order_coordinator",
-        "order-42",
-        "order-42:create",
-        &bindings,
-    );
-    let mut state = created.state.expect("creation succeeds");
-
-    let started = handled_input(
-        &bundle,
-        &state,
-        "begin",
-        "components:begin",
-        BTreeMap::new(),
-    );
-    state = started.state.expect("begin state");
-    let first_activation = started.emissions;
-    assert_eq!(
-        first_activation
-            .iter()
-            .map(|item| item.event.as_str())
-            .collect::<Vec<_>>(),
-        vec!["component_work", "component_work"]
-    );
-    assert_eq!(int_variable(&component(&state, "inventory").runtime, "handled"), 0);
-    assert_eq!(int_variable(&component(&state, "receipt").runtime, "handled"), 0);
-
-    let inventory_work = dispatch(
-        &bundle,
-        &state,
-        Some(internal(&first_activation[0])),
-    );
-    state = inventory_work.state.expect("inventory work state");
-    assert_eq!(int_variable(&component(&state, "inventory").runtime, "handled"), 1);
-    assert_eq!(int_variable(&component(&state, "receipt").runtime, "handled"), 0);
-
-    let refreshed = handled_input(
-        &bundle,
-        &state,
-        "refresh_inventory",
-        "components:refresh",
-        BTreeMap::from([(
-            "token".to_string(),
-            Value::String("token-2".to_string()),
-        )]),
-    );
-    state = refreshed.state.expect("refresh request state");
-    let applied = dispatch(
-        &bundle,
-        &state,
-        Some(internal(&refreshed.emissions[0])),
-    );
-    state = applied.state.expect("refresh delivery state");
-    assert_eq!(
-        string_variable(&component(&state, "inventory").runtime, "token"),
-        "token-2"
-    );
-    assert_eq!(
-        string_variable(&component(&state, "receipt").runtime, "token"),
-        "token-1"
-    );
-
-    let restarted = handled_input(
-        &bundle,
-        &state,
-        "restart",
-        "components:restart",
-        BTreeMap::new(),
-    );
-    state = restarted.state.expect("restart state");
-    assert!(state.root.components.is_empty());
-    let second_activation = handled_input(
-        &bundle,
-        &state,
-        "begin",
-        "components:begin-again",
-        BTreeMap::new(),
-    );
-    state = second_activation.state.expect("second activation state");
-
-    let stale = dispatch(
-        &bundle,
-        &state,
-        Some(internal(&first_activation[1])),
-    );
-    assert_eq!(stale.disposition, Some(Disposition::Rejected));
-    assert_eq!(
-        stale.rejection.expect("stale rejection").code,
-        "inactive_component_target"
-    );
-    assert_eq!(stale.state.as_ref(), Some(&state));
-
-    let current_inventory = component(&state, "inventory");
-    let direct_host = dispatch(
-        &bundle,
-        &state,
-        Some(Delivery::Input(Envelope {
-            event: "component_host_work".to_string(),
-            event_id: "components:direct-host".to_string(),
-            target: Target::Component {
-                root_instance_id: state.root_instance_id.clone(),
-                owner_runtime_id: state.root.runtime_id.clone(),
-                component_id: "inventory".to_string(),
-                component_runtime_id: current_inventory.runtime.runtime_id.clone(),
-                activation_sequence: current_inventory.activation_sequence.clone(),
-            },
-            payload: BTreeMap::new(),
-            correlation_id: None,
-        })),
-    );
-    assert_eq!(direct_host.disposition, Some(Disposition::Rejected));
-    assert_eq!(
-        direct_host.rejection.expect("host rejection").code,
-        "invalid_instance_target"
-    );
-    assert_eq!(direct_host.state.as_ref(), Some(&state));
-
-    let left = handled_input(
-        &bundle,
-        &state,
-        "finish_inventory",
-        "components:finish-inventory",
-        BTreeMap::new(),
-    );
-    let left_state = left.state.expect("left request state");
-    let left_done = dispatch(
-        &bundle,
-        &left_state,
-        Some(internal(&left.emissions[0])),
-    );
-    state = left_done.state.expect("left completion state");
-    assert_eq!(
-        component(&state, "inventory").runtime.status,
-        RuntimeStatus::Completed
-    );
-    assert_eq!(
-        component(&state, "receipt").runtime.status,
-        RuntimeStatus::Running
-    );
-
-    let right = handled_input(
-        &bundle,
-        &state,
-        "finish_receipt",
-        "components:finish-receipt",
-        BTreeMap::new(),
-    );
-    let right_state = right.state.expect("right request state");
-    let right_done = dispatch(
-        &bundle,
-        &right_state,
-        Some(internal(&right.emissions[0])),
-    );
-    assert_eq!(
-        right_done
-            .emissions
-            .iter()
-            .map(|item| item.event.as_str())
-            .collect::<Vec<_>>(),
-        vec!["determa.component_completed", "done"]
-    );
-    let completion_state = right_done.state.expect("component completion state");
-    let finished = dispatch(
-        &bundle,
-        &completion_state,
-        Some(internal(&right_done.emissions[1])),
-    );
-    assert_eq!(finished.status, determa_state::ResultStatus::Completed);
-    assert!(
-        finished
-            .state
-            .expect("finished state")
-            .root
-            .components
-            .is_empty()
-    );
-    "components: isolated, refreshed, stale target rejected, completed".to_string()
-}
-
-fn run_owned(path: &str) -> String {
-    let bundle = load_bundle(&fs::read_to_string(path).expect("owned bundle"))
-        .expect("valid owned bundle");
-    let created = create(
-        &bundle,
-        "owner",
-        "owner-7",
-        "owner-7:create",
-        &Bindings::default(),
-    );
-    let mut state = created.state.expect("creation succeeds");
-
-    let prepared = handled_input(
-        &bundle,
-        &state,
-        "prepare",
-        "owned:prepare",
-        BTreeMap::new(),
-    );
-    state = prepared.state.expect("prepared state");
-    assert_eq!(state.root.owned_instances.len(), 4);
-    match state.root.visible_variables().get("root_worker") {
-        Some(Value::InstanceReference(reference)) => {
-            assert_eq!(reference.root_instance_id, "owner-7");
-            assert_eq!(reference.machine_id, "worker");
-            assert_eq!(reference.machine_version, 1);
-            assert!(!reference.instance_id.is_empty());
-        }
-        other => panic!("root_worker is not a reference: {other:?}"),
-    }
-
-    let requested = handled_input(
-        &bundle,
-        &state,
-        "request_bound_work",
-        "owned:request",
-        BTreeMap::new(),
-    );
-    let requested_state = requested.state.expect("request state");
-    let worked = dispatch(
-        &bundle,
-        &requested_state,
-        Some(internal(&requested.emissions[0])),
-    );
-    let worked_state = worked.state.expect("worked state");
-    let replied = dispatch(
-        &bundle,
-        &worked_state,
-        Some(internal(&worked.emissions[0])),
-    );
-    state = replied.state.expect("reply state");
-    assert_eq!(int_variable(&state.root, "reply_count"), 1);
-
-    let left = handled_input(
-        &bundle,
-        &state,
-        "leave",
-        "owned:leave",
-        BTreeMap::new(),
-    );
-    state = left.state.expect("left holding state");
-    assert_eq!(
-        left.emissions
-            .iter()
-            .map(|item| item.payload["label"].clone())
-            .collect::<Vec<_>>(),
-        vec![
-            Value::String("scoped-one".to_string()),
-            Value::String("scoped-two".to_string()),
-        ]
-    );
-    assert_eq!(state.root.owned_instances.len(), 2);
-
-    let finish_request = handled_input(
-        &bundle,
-        &state,
-        "finish_bound",
-        "owned:finish-bound",
-        BTreeMap::new(),
-    );
-    let finish_state = finish_request.state.expect("finish request state");
-    let completed = dispatch(
-        &bundle,
-        &finish_state,
-        Some(internal(&finish_request.emissions[0])),
-    );
-    assert_eq!(
-        completed
-            .emissions
-            .iter()
-            .map(|item| item.event.as_str())
-            .collect::<Vec<_>>(),
-        vec!["child_exited", "done"]
-    );
-    state = completed.state.expect("child completed state");
-    assert_eq!(state.root.owned_instances.len(), 1);
-    let completion_seen = dispatch(
-        &bundle,
-        &state,
-        Some(internal(&completed.emissions[1])),
-    );
-    state = completion_seen.state.expect("completion observed state");
-    assert_eq!(int_variable(&state.root, "completed_count"), 1);
-
-    let cleaned = handled_input(
-        &bundle,
-        &state,
-        "cleanup_references",
-        "owned:cleanup",
-        BTreeMap::new(),
-    );
-    state = cleaned.state.expect("cleanup state");
-    assert_eq!(int_variable(&state.root, "cleanup_count"), 1);
-    assert_eq!(state.root.owned_instances.len(), 1);
-
-    let owner_done = handled_input(
-        &bundle,
-        &state,
-        "finish_owner",
-        "owned:finish-owner",
-        BTreeMap::new(),
-    );
-    assert_eq!(owner_done.status, determa_state::ResultStatus::Completed);
-    assert_eq!(
-        owner_done.emissions[0].payload["label"],
-        Value::String("unbound".to_string())
-    );
-    assert!(
-        owner_done
-            .state
-            .expect("owner completed state")
-            .root
-            .owned_instances
-            .is_empty()
-    );
-    "owned: 4 spawned, 2 scoped disposed, bound completed, unbound cascaded".to_string()
+fn input(bundle: &Bundle, state: &Aggregate, event: &str, sequence: u8, payload: Value) -> (Aggregate, Value) {
+    let event_id = format!("tutorial-components:{sequence}");
+    let envelope = QueueEnvelope { event: event.into(), event_id: event_id.clone(), cause_id: event_id.clone(),
+        source: json!({"host": true}), target: root(state)["target_identity"].clone(), payload: typed(&payload), correlation_id: None };
+    let accepted = admission(bundle, state, envelope, "input").unwrap();
+    assert_eq!(accepted["result"], "accepted");
+    let state = restored(bundle, &accepted);
+    let (next, result) = step_until(bundle, &state, state.value()["root_runtime_id"].as_str().unwrap(), &event_id);
+    assert_eq!(result["disposition"], "handled");
+    (next, result)
 }
 
 fn main() {
-    let mut args = env::args().skip(1);
-    let components = args.next().expect("components bundle path");
-    let owned = args.next().expect("owned bundle path");
-    assert!(args.next().is_none(), "expected exactly two bundle paths");
-    println!("{}", run_components(&components));
-    println!("{}", run_owned(&owned));
+    let paths: Vec<String> = env::args().skip(1).collect();
+    let bundle = load(&paths[0]);
+    let bindings = Bindings {
+        input: BTreeMap::from([("order_id".into(), NativeValue::String("ORD-42".into()))]),
+        external: BTreeMap::from([("inventory_token".into(), NativeValue::String("token-1".into()))]),
+    };
+    let state = create(&bundle, "order_coordinator", "order-42", "order-42:create", &bindings).unwrap();
+    let (mut state, started) = input(&bundle, &state, "begin", 1, json!({}));
+    let first = &started["emissions"];
+    assert_eq!(first.as_array().unwrap().iter().map(|emission| event_for(&state, emission)).collect::<Vec<_>>(), vec![json!("component_work"), json!("component_work")]);
+    let stale_envelope: QueueEnvelope = serde_json::from_value(envelope_for(&state, &first[1])).unwrap();
+    assert_eq!(runtime_variable(component(&state, "inventory"), "handled"), json!(0));
+    assert_eq!(runtime_variable(component(&state, "receipt"), "handled"), json!(0));
+    state = step_emission(&bundle, &state, &first[0]).0;
+    assert_eq!(runtime_variable(component(&state, "inventory"), "handled"), json!(1));
+    assert_eq!(runtime_variable(component(&state, "receipt"), "handled"), json!(0));
+    let (next, refresh) = input(&bundle, &state, "refresh_inventory", 2, json!({"token": "token-2"}));
+    state = step_emission(&bundle, &next, &refresh["emissions"][0]).0;
+    assert_eq!(runtime_variable(component(&state, "inventory"), "token"), "token-2");
+    assert_eq!(runtime_variable(component(&state, "receipt"), "token"), "token-1");
+    state = input(&bundle, &state, "restart", 3, json!({})).0;
+    assert!(state.value()["runtimes"].as_array().unwrap().iter().all(|runtime| runtime["relation"]["kind"] != "component"));
+    state = input(&bundle, &state, "begin", 4, json!({})).0;
+    let before_rejections = state.value().clone();
+    let stale = admission(&bundle, &state, stale_envelope, "internal").unwrap_err();
+    assert_eq!(stale.code, "invalid_instance_target");
+    assert_eq!(&before_rejections, state.value());
+    let host_envelope = QueueEnvelope {
+        event: "component_host_work".into(), event_id: "direct-host".into(), cause_id: "direct-host".into(),
+        source: json!({"host": true}), target: component(&state, "inventory")["target_identity"].clone(),
+        payload: TypedValue::Map(vec![]), correlation_id: None,
+    };
+    let direct = admission(&bundle, &state, host_envelope, "input").unwrap_err();
+    assert_eq!(direct.code, "invalid_instance_target");
+    assert_eq!(&before_rejections, state.value());
+    let (next, left) = input(&bundle, &state, "finish_inventory", 5, json!({}));
+    state = step_emission(&bundle, &next, &left["emissions"][0]).0;
+    assert_eq!(component(&state, "inventory")["status"], "completed");
+    assert_eq!(component(&state, "receipt")["status"], "running");
+    let (next, right) = input(&bundle, &state, "finish_receipt", 6, json!({}));
+    let (next, right_done) = step_emission(&bundle, &next, &right["emissions"][0]);
+    assert_eq!(right_done["emissions"].as_array().unwrap().iter().map(|emission| event_for(&next, emission)).collect::<Vec<_>>(), vec![json!("determa.component_completed"), json!("done")]);
+    let (state, finished) = step_emission(&bundle, &next, &right_done["emissions"][1]);
+    assert_eq!(finished["status"], "completed");
+    assert!(state.value()["runtimes"].as_array().unwrap().iter().all(|runtime| runtime["relation"]["kind"] != "component"));
+    println!("components: isolated, refreshed, stale target rejected, completed");
+
+    let bundle = load(&paths[1]);
+    let state = create(&bundle, "owner", "owner-7", "owner-7:create", &Bindings::default()).unwrap();
+    let mut state = input(&bundle, &state, "prepare", 20, json!({})).0;
+    assert_eq!(owned_count(&state), 4);
+    assert_eq!(logical(&state, "root_worker")["machine_id"], "worker");
+    let (next, request) = input(&bundle, &state, "request_bound_work", 21, json!({}));
+    let (next, worked) = step_emission(&bundle, &next, &request["emissions"][0]);
+    state = step_emission(&bundle, &next, &worked["emissions"][0]).0;
+    assert_eq!(logical(&state, "reply_count"), json!(1));
+    let (next, left) = input(&bundle, &state, "leave", 22, json!({}));
+    state = next;
+    assert_eq!(left["emissions"].as_array().unwrap().iter().map(|emission| decode(&emission["payload"])["label"].clone()).collect::<Vec<_>>(), vec![json!("scoped-one"), json!("scoped-two")]);
+    assert_eq!(owned_count(&state), 2);
+    let (next, finish) = input(&bundle, &state, "finish_bound", 23, json!({}));
+    let (next, completed) = step_emission(&bundle, &next, &finish["emissions"][0]);
+    assert_eq!(completed["emissions"].as_array().unwrap().iter().map(|emission| event_for(&next, emission)).collect::<Vec<_>>(), vec![json!("child_exited"), json!("done")]);
+    assert_eq!(owned_count(&next), 1);
+    state = step_emission(&bundle, &next, &completed["emissions"][1]).0;
+    assert_eq!(logical(&state, "completed_count"), json!(1));
+    state = input(&bundle, &state, "cleanup_references", 24, json!({})).0;
+    assert_eq!(logical(&state, "cleanup_count"), json!(1));
+    assert_eq!(owned_count(&state), 1);
+    let (state, done) = input(&bundle, &state, "finish_owner", 25, json!({}));
+    assert_eq!(done["status"], "completed");
+    assert_eq!(done["emissions"].as_array().unwrap().iter().map(|emission| decode(&emission["payload"])["label"].clone()).collect::<Vec<_>>(), vec![json!("unbound")]);
+    assert_eq!(owned_count(&state), 0);
+    println!("owned: 4 spawned, 2 scoped disposed, bound completed, unbound cascaded");
 }
 ```
 
@@ -1184,43 +983,43 @@ portable lifecycle model:
 | State-scoped holder exits | Dispose every child ever bound to that holder activation, even if the variable was cleared or reused. |
 | Null or disposed cancellation | Successful no-op; later actions in the same list continue. |
 | Direct host-to-component delivery | Reject atomically with `invalid_instance_target`; caller retains the envelope. |
-| Old component envelope after re-entry | Reject with `inactive_component_target`; never retarget the new activation. |
+| Old component envelope after re-entry | Refuse its removed runtime identity with `invalid_instance_target`; never retarget the new activation. |
 | Root executes `to: { owner: true }` | Fault the root step with `invalid_instance_target`. |
 
 ## Coverage
 
 This chapter covers specification
-[§7](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#7-components-spawning-and-lifecycle),
-[§7.1](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#71-lifecycle-bound-components),
-[§7.2](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#72-owned-spawned-instances),
+[§7](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#7-components-spawning-and-lifecycle),
+[§7.1](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#71-lifecycle-bound-components),
+[§7.2](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#72-owned-spawned-instances),
 and
-[§7.3](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#73-runtime-and-aggregate-root-completion).
+[§7.3](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#73-runtime-and-aggregate-root-completion).
 
-The matching v0.2.0 conformance cases are:
+The matching pinned 0.3.0 conformance cases are:
 
-- [09 parallel components](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/09-parallel-components)
-- [13 spawn completion](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/13-spawn-completion)
-- [14 explicit targets](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/14-explicit-targets)
-- [29 owned spawn](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/29-owned-spawn)
-- [30 owned spawn cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/30-owned-spawn-cancel)
-- [38 destroyed reference binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/38-destroyed-reference-binding)
-- [47 scoped owned-child lifetime](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/47-scoped-owned-child-lifetime)
-- [48 null cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/48-null-cancel)
-- [49 exit-action cancel](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/49-exit-action-cancel)
-- [51 component initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/51-component-initialization-fault)
-- [52 spawned initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/52-spawned-initialization-fault)
-- [54 stale component target](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/54-stale-component-target)
-- [55 root owner target](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/55-root-owner-target)
-- [73 synchronous initialization cycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/73-synchronous-initialization-cycle)
-- [74 sibling cleanup order](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/74-sibling-cleanup-order)
-- [78 component external refresh](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/78-component-external-refresh)
-- [80 unbound owned child](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/80-unbound-owned-child)
-- [81 holder reference reuse](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/81-holder-reference-reuse)
-- [82 instance-reference target identity](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/82-instance-reference-target-identity)
-- [83 contained dynamic instance send](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/83-contained-dynamic-instance-send)
-- [86 initial component completion order](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/86-initial-component-completion-order)
-- [87 internal env target mode](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/87-internal-env-target-mode)
-- [91 component host-input rejection](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/91-component-host-input-rejection)
+- [09 parallel components](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/09-parallel-components)
+- [13 spawn completion](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/13-spawn-completion)
+- [14 explicit targets](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/14-explicit-targets)
+- [29 owned spawn](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/29-owned-spawn)
+- [30 owned spawn cancel](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/30-owned-spawn-cancel)
+- [38 destroyed reference binding](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/38-destroyed-reference-binding)
+- [47 scoped owned-child lifetime](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/47-scoped-owned-child-lifetime)
+- [48 null cancel](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/48-null-cancel)
+- [49 exit-action cancel](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/49-exit-action-cancel)
+- [51 component initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/51-component-initialization-fault)
+- [52 spawned initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/52-spawned-initialization-fault)
+- [54 stale component target](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/54-stale-component-target)
+- [55 root owner target](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/55-root-owner-target)
+- [73 synchronous initialization cycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/73-synchronous-initialization-cycle)
+- [74 sibling cleanup order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/74-sibling-cleanup-order)
+- [78 component external refresh](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/78-component-external-refresh)
+- [80 unbound owned child](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/80-unbound-owned-child)
+- [81 holder reference reuse](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/81-holder-reference-reuse)
+- [82 instance-reference target identity](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/82-instance-reference-target-identity)
+- [83 contained dynamic instance send](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/83-contained-dynamic-instance-send)
+- [86 initial component completion order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/86-initial-component-completion-order)
+- [87 internal env target mode](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/87-internal-env-target-mode)
+- [91 component host-input rejection](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/91-component-host-input-rejection)
 
 Portable package imports and direct host-to-component input are deliberately not
 introduced here.

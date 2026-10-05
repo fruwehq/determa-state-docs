@@ -5,7 +5,7 @@ nested phases, data with clear lifetimes, predictable entry and exit behavior, a
 way to resume interrupted work.
 
 This chapter builds those ideas in layers. Every complete file is extracted from this
-Markdown and run against Determa State 0.2.0 in both Python and Rust.
+Markdown and run against the unreleased Determa State 0.3.0 candidate in both Python and Rust.
 
 ## 1. Read a statechart from the outside in
 
@@ -614,7 +614,10 @@ engine fault.
 
 ## 11. Run the complete trace with Python
 
-The program below creates and advances all four machines. It asserts exact active
+The program below creates and advances all four machines. The version-1 admission
+boundary requires complete normalized typed payloads, so these programs explicitly
+materialize the declared `message` and `priority` defaults before computing delivery
+digests. An application input adapter can perform that normalization before admission. It asserts exact active
 states, normalized values, lifecycle effects, history behavior, YAML 1.2 strings, and
 stop completion.
 
@@ -631,32 +634,56 @@ def load(examples: Path, name: str):
 
 
 def root_runtime(state):
-    return state["runtimes"][state["root_runtime_id"]]
+    return next(runtime for runtime in state["runtimes"]
+                if runtime["runtime_id"] == state["root_runtime_id"])
+
+
+def decode(value):
+    # Display the public typed projection; the engine retains these tagged values.
+    tag = value[0]
+    if tag == "integer":
+        return int(value[1])
+    if tag == "list":
+        return [decode(item) for item in value[1]]
+    if tag == "map":
+        return {name: decode(item) for name, item in value[1]}
+    if tag == "null":
+        return None
+    return value[1]
 
 
 def variables(state):
     visible = {}
-    for scope in root_runtime(state)["scopes"].values():
-        visible.update(scope)
+    for variable in sorted(root_runtime(state)["variables"],
+                           key=lambda item: item["variable_declaration_pointer"].count("/")):
+        visible[variable["variable_declaration_pointer"].rsplit("/", 1)[1]] = decode(variable["value"])
     return visible
 
 
+def active_paths(state):
+    runtime = root_runtime(state)
+    base = runtime["current_definition"]["machine"]["root_definition_pointer"]
+    paths = []
+    for activation in runtime["active_state_activations"]:
+        pointer = activation["state_definition_pointer"]
+        paths.append("root" if pointer == base else pointer[len(base + "/states/"):].replace("/states/", "."))
+    return paths
+
+
 def send(bundle, state, event, sequence, payload=None):
-    envelope = {
-        "event": event,
-        "event_id": f"tutorial-core:{sequence}",
-        "target": {
-            "root": {
-                "root_instance_id": state["root_instance_id"],
-                "root_runtime_id": state["root_runtime_id"],
-            }
-        },
-        "payload": payload or {},
+    resolver = determa_state.MemoryArtifactResolver(definitions={bundle.fingerprint: bundle})
+    envelope = determa_state.portable_envelope(
+        event, f"tutorial-core:{sequence}", root_runtime(state)["target_identity"], payload or {},
+    )
+    delivery = {
+        "delivery_mode": "input", "envelope": envelope,
+        "envelope_digest": determa_state.delivery_request_digest(state["root_instance_id"], "input", envelope),
     }
-    result = determa_state.dispatch(bundle, state, {"input": envelope})
+    admitted = determa_state.admit(state, [delivery], resolver)
+    assert admitted["result"] == "accepted"
+    result = determa_state.step(admitted["state"], state["root_runtime_id"], resolver)
     assert result["disposition"] == "handled"
     return result
-
 
 examples = Path(sys.argv[1])
 
@@ -673,14 +700,14 @@ created = determa_state.create(
 )
 assert created["status"] == "running"
 order_state = created["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.review"]
+assert active_paths(order_state) == ["root", "work", "work.review"]
 assert variables(order_state)["channel"] == "web"
 assert variables(order_state)["region"] == "east"
 assert variables(order_state)["visits"] == 1
 
-result = send(order_bundle, order_state, "add_note", 1)
+result = send(order_bundle, order_state, "add_note", 1, {"message": "customer note"})
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.review"]
+assert active_paths(order_state) == ["root", "work", "work.review"]
 assert variables(order_state)["visits"] == 2
 assert variables(order_state)["trail"][-1] == "customer note"
 
@@ -689,10 +716,10 @@ result = send(
     order_state,
     "submit",
     2,
-    {"amount": 80},
+    {"amount": 80, "priority": "normal"},
 )
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.approved"]
+assert active_paths(order_state) == ["root", "work", "work.approved"]
 assert variables(order_state)["priority"] == "normal"
 assert variables(order_state)["note_present"] is False
 assert variables(order_state)["trail"][-3:] == [
@@ -703,13 +730,13 @@ assert variables(order_state)["trail"][-3:] == [
 
 result = send(order_bundle, order_state, "local_review", 3)
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.review"]
+assert active_paths(order_state) == ["root", "work", "work.review"]
 assert variables(order_state)["visits"] == 2
 assert "exit_work" not in variables(order_state)["trail"][-2:]
 
 result = send(order_bundle, order_state, "reset_review", 4)
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.review"]
+assert active_paths(order_state) == ["root", "work", "work.review"]
 assert variables(order_state)["visits"] == 1
 assert variables(order_state)["trail"][-4:] == [
     "exit_review",
@@ -723,25 +750,25 @@ result = send(
     order_state,
     "submit",
     5,
-    {"amount": 500, "note": "manual review"},
+    {"amount": 500, "priority": "normal", "note": "manual review"},
 )
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.rejected"]
+assert active_paths(order_state) == ["root", "work", "work.rejected"]
 assert variables(order_state)["note_present"] is True
 
 result = send(order_bundle, order_state, "pause", 6)
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "paused"]
+assert active_paths(order_state) == ["root", "paused"]
 assert "visits" not in variables(order_state)
 
 result = send(order_bundle, order_state, "resume", 7)
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.rejected"]
+assert active_paths(order_state) == ["root", "work", "work.rejected"]
 assert variables(order_state)["visits"] == 1
 
 order_state = send(order_bundle, order_state, "pause", 8)["state"]
 order_state = send(order_bundle, order_state, "restart", 9)["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.review"]
+assert active_paths(order_state) == ["root", "work", "work.review"]
 assert variables(order_state)["visits"] == 1
 
 result = send(
@@ -754,11 +781,11 @@ result = send(
 order_state = result["state"]
 assert variables(order_state)["region"] == "west"
 assert variables(order_state)["applied_region"] == "west"
-assert root_runtime(order_state)["active"] == ["root", "work", "work.review"]
+assert active_paths(order_state) == ["root", "work", "work.review"]
 
 result = send(order_bundle, order_state, "root_restart", 11)
 order_state = result["state"]
-assert root_runtime(order_state)["active"] == ["root", "work", "work.review"]
+assert active_paths(order_state) == ["root", "work", "work.review"]
 assert variables(order_state)["region"] == "west"
 assert variables(order_state)["trail"].count("enter_root") == 1
 
@@ -781,7 +808,7 @@ for sequence, event in enumerate(
         event,
         sequence,
     )["state"]
-assert root_runtime(history_state)["active"] == [
+assert active_paths(history_state) == [
     "root",
     "shallow_zone",
     "shallow_zone.shallow_outer",
@@ -798,7 +825,7 @@ for sequence, event in enumerate(
         event,
         sequence,
     )["state"]
-active = root_runtime(history_state)["active"]
+active = active_paths(history_state)
 assert active == ["root", "deep_zone", "deep_zone.deep_outer", "deep_zone.deep_outer.deep_second"]
 assert variables(history_state)["visits"] == 10
 
@@ -812,8 +839,8 @@ created = determa_state.create(
 )
 yaml_state = created["state"]
 for sequence, event in enumerate(["no", "off", "yes", "on"], start=40):
-    yaml_state = send(yaml_bundle, yaml_state, event, sequence)["state"]
-assert root_runtime(yaml_state)["active"] == ["root", "no"]
+    yaml_state = send(yaml_bundle, yaml_state, event, sequence, {"value": event})["state"]
+assert active_paths(yaml_state) == ["root", "no"]
 assert variables(yaml_state)["observed_value"] == "on"
 
 stop_bundle = load(examples, "core-choice-stop.yaml")
@@ -826,7 +853,7 @@ created = determa_state.create(
 )
 stop_result = send(stop_bundle, created["state"], "go", 50)
 assert stop_result["status"] == "completed"
-assert [emission["payload"]["stage"] for emission in stop_result["emissions"]] == [
+assert [decode(emission["payload"])["stage"] for emission in stop_result["emissions"]] == [
     "before_stop"
 ]
 
@@ -844,368 +871,149 @@ The Rust program uses the same four extracted YAML files and checks the same out
 ```toml
 [package]
 name = "determa-core-statecharts"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.2.0"
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+serde_json = "1"
+serde_json_canonicalizer = "0.3"
+sha2 = "0.10"
 ```
 
 <!-- determa-example: rust/core-statecharts/src/main.rs -->
 ```rust
-use determa_state::{
-    create, dispatch, load_bundle, AggregateState, Bindings, Bundle, Delivery,
-    Disposition, Envelope, ResultStatus, Target, Value,
-};
+use determa_state::{admit, create, load_bundle, restore_aggregate, step,
+    AdmissionDelivery, Aggregate, Bindings, Bundle, InMemoryDefinitionResolver,
+    QueueEnvelope, TypedValue};
+use determa_state::Value as NativeValue;
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, env, fs, path::Path};
 
-fn load(examples: &Path, name: &str) -> Result<Bundle, Box<dyn std::error::Error>> {
-    Ok(load_bundle(&fs::read_to_string(
-        examples.join("machines").join(name),
-    )?)?)
+fn load(examples: &Path, name: &str) -> Bundle {
+    load_bundle(&fs::read_to_string(examples.join("machines").join(name)).unwrap()).unwrap()
 }
 
-fn input(
-    state: &AggregateState,
-    event: &str,
-    sequence: u8,
-    payload: BTreeMap<String, Value>,
-) -> Delivery {
-    Delivery::Input(Envelope {
-        event: event.to_string(),
-        event_id: format!("tutorial-core:{sequence}"),
-        target: Target::Root {
-            root_instance_id: state.root_instance_id.clone(),
-            root_runtime_id: state.root.runtime_id.clone(),
-        },
-        payload,
-        correlation_id: None,
-    })
+fn root(state: &Aggregate) -> &Value {
+    state.value()["runtimes"].as_array().unwrap().iter()
+        .find(|runtime| runtime["runtime_id"] == state.value()["root_runtime_id"]).unwrap()
 }
 
-fn send(
-    bundle: &Bundle,
-    state: &AggregateState,
-    event: &str,
-    sequence: u8,
-    payload: BTreeMap<String, Value>,
-) -> determa_state::CoreResult {
-    let result = dispatch(
-        bundle,
-        state,
-        Some(input(state, event, sequence, payload)),
-    );
-    assert_eq!(result.disposition, Some(Disposition::Handled));
-    result
+fn variable(state: &Aggregate, name: &str) -> Option<Value> {
+    root(state)["variables"].as_array().unwrap().iter()
+        .filter(|variable| variable["variable_declaration_pointer"].as_str().unwrap()
+            .ends_with(&format!("/variables/{name}")))
+        .max_by_key(|variable| variable["variable_declaration_pointer"].as_str().unwrap().len())
+        .map(|variable| variable["value"].clone())
 }
 
-fn no_payload() -> BTreeMap<String, Value> {
-    BTreeMap::new()
+fn active(state: &Aggregate, path: &str) -> bool {
+    let base = root(state)["current_definition"]["machine"]["root_definition_pointer"].as_str().unwrap();
+    let pointer = if path == "root" { base.to_owned() }
+        else { format!("{base}/states/{}", path.replace('.', "/states/")) };
+    root(state)["active_state_activations"].as_array().unwrap().iter()
+        .any(|activation| activation["state_definition_pointer"] == pointer)
 }
 
-fn active(state: &AggregateState, path: &str) -> bool {
-    state.root.active.contains(path)
+fn typed(value: &Value) -> TypedValue {
+    match value {
+        Value::Null => TypedValue::Null,
+        Value::Bool(value) => TypedValue::Boolean(*value),
+        Value::String(value) => TypedValue::String(value.clone()),
+        Value::Number(value) => TypedValue::Integer(value.as_i64().unwrap()),
+        Value::Array(values) => TypedValue::List(values.iter().map(typed).collect()),
+        Value::Object(values) => TypedValue::Map(values.iter().map(|(name, value)| (name.clone(), typed(value))).collect()),
+    }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let examples_argument = env::args().nth(1).expect("examples directory");
-    let examples = Path::new(&examples_argument);
-
-    let order_bundle = load(examples, "core-order-review.yaml")?;
-    let order_bindings = Bindings {
-        input: BTreeMap::from([(
-            "order_id".to_string(),
-            Value::String("1001".to_string()),
-        )]),
-        external: BTreeMap::from([(
-            "region".to_string(),
-            Value::String("east".to_string()),
-        )]),
+fn send(bundle: &Bundle, state: &Aggregate, event: &str, sequence: u8, payload: Value) -> (Aggregate, Value) {
+    let envelope = QueueEnvelope {
+        event: event.into(), event_id: format!("tutorial-core:{sequence}"),
+        cause_id: format!("tutorial-core:{sequence}"), source: json!({"host": true}),
+        target: root(state)["target_identity"].clone(), payload: typed(&payload), correlation_id: None,
     };
-    let created = create(
-        &order_bundle,
-        "order_review",
-        "order-1001",
-        "order-1001:create",
-        &order_bindings,
-    );
-    assert_eq!(created.status, ResultStatus::Running);
-    let mut order_state = created.state.expect("order creation succeeds");
-    assert!(active(&order_state, "work.review"));
-    assert_eq!(
-        order_state.root.visible_variables()["channel"],
-        Value::String("web".to_string())
-    );
-    assert_eq!(
-        order_state.root.visible_variables()["visits"],
-        Value::Int(1)
-    );
+    let bytes = serde_json_canonicalizer::to_vec(&json!([
+        "determa-inbox-envelope-digest-1", "1", state.value()["root_instance_id"], "input", envelope,
+    ])).unwrap();
+    let delivery = AdmissionDelivery { delivery_mode: "input".into(), envelope,
+        envelope_digest: format!("sha256:{:x}", Sha256::digest(bytes)) };
+    let admitted = admit(bundle, state, &[delivery]).unwrap();
+    assert_eq!(admitted["result"], "accepted");
+    let mut resolver = InMemoryDefinitionResolver::default();
+    resolver.insert(bundle.clone(), true);
+    let accepted = restore_aggregate(&serde_json_canonicalizer::to_vec(&admitted["state"]).unwrap(), &resolver).unwrap();
+    let result = step(bundle, &accepted, state.value()["root_runtime_id"].as_str().unwrap()).unwrap();
+    assert_eq!(result["disposition"], "handled");
+    let next = restore_aggregate(&serde_json_canonicalizer::to_vec(&result["state"]).unwrap(), &resolver).unwrap();
+    (next, result)
+}
 
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "add_note",
-        1,
-        no_payload(),
-    )
-    .state
-    .expect("note succeeds");
-    assert_eq!(
-        order_state.root.visible_variables()["visits"],
-        Value::Int(2)
-    );
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "submit",
-        2,
-        BTreeMap::from([("amount".to_string(), Value::Int(80))]),
-    )
-    .state
-    .expect("submit succeeds");
-    assert!(active(&order_state, "work.approved"));
-    assert_eq!(
-        order_state.root.visible_variables()["priority"],
-        Value::String("normal".to_string())
-    );
-    assert_eq!(
-        order_state.root.visible_variables()["note_present"],
-        Value::Bool(false)
-    );
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "local_review",
-        3,
-        no_payload(),
-    )
-    .state
-    .expect("local transition succeeds");
-    assert!(active(&order_state, "work.review"));
-    assert_eq!(
-        order_state.root.visible_variables()["visits"],
-        Value::Int(2)
-    );
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "reset_review",
-        4,
-        no_payload(),
-    )
-    .state
-    .expect("unmarked transition succeeds");
-    assert_eq!(
-        order_state.root.visible_variables()["visits"],
-        Value::Int(1)
-    );
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "submit",
-        5,
-        BTreeMap::from([
-            ("amount".to_string(), Value::Int(500)),
-            (
-                "note".to_string(),
-                Value::String("manual review".to_string()),
-            ),
-        ]),
-    )
-    .state
-    .expect("second submit succeeds");
-    assert!(active(&order_state, "work.rejected"));
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "pause",
-        6,
-        no_payload(),
-    )
-    .state
-    .expect("pause succeeds");
-    assert!(active(&order_state, "paused"));
-    assert!(!order_state.root.visible_variables().contains_key("visits"));
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "resume",
-        7,
-        no_payload(),
-    )
-    .state
-    .expect("history resume succeeds");
-    assert!(active(&order_state, "work.rejected"));
-    assert_eq!(
-        order_state.root.visible_variables()["visits"],
-        Value::Int(1)
-    );
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "pause",
-        8,
-        no_payload(),
-    )
-    .state
-    .expect("second pause succeeds");
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "restart",
-        9,
-        no_payload(),
-    )
-    .state
-    .expect("plain restart succeeds");
-    assert!(active(&order_state, "work.review"));
-
-    let changed = Value::Map(BTreeMap::from([(
-        "region".to_string(),
-        Value::String("west".to_string()),
-    )]));
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "env",
-        10,
-        BTreeMap::from([("changed".to_string(), changed)]),
-    )
-    .state
-    .expect("external refresh succeeds");
-    assert_eq!(
-        order_state.root.visible_variables()["region"],
-        Value::String("west".to_string())
-    );
-
-    order_state = send(
-        &order_bundle,
-        &order_state,
-        "root_restart",
-        11,
-        no_payload(),
-    )
-    .state
-    .expect("root-selected transition succeeds");
-    assert!(active(&order_state, "work.review"));
-
-    let history_bundle = load(examples, "core-history-tour.yaml")?;
-    let created = create(
-        &history_bundle,
-        "history_tour",
-        "history-tour",
-        "history-tour:create",
-        &Bindings::default(),
-    );
-    let mut history_state = created.state.expect("history creation succeeds");
-    for (sequence, event) in ["advance", "leave_shallow", "resume_shallow"]
-    .into_iter()
-    .enumerate()
-    {
-        history_state = send(
-            &history_bundle,
-            &history_state,
-            event,
-            20 + sequence as u8,
-            no_payload(),
-        )
-        .state
-        .expect("history step succeeds");
+fn main() {
+    let argument = env::args().nth(1).expect("examples directory");
+    let examples = Path::new(&argument);
+    let order = load(examples, "core-order-review.yaml");
+    let bindings = Bindings {
+        input: BTreeMap::from([("order_id".into(), NativeValue::String("1001".into()))]),
+        external: BTreeMap::from([("region".into(), NativeValue::String("east".into()))]),
+    };
+    let mut state = create(&order, "order_review", "order-1001", "order-1001:create", &bindings).unwrap();
+    assert!(active(&state, "work.review"));
+    assert_eq!(variable(&state, "channel"), Some(json!(["string", "web"])));
+    assert_eq!(variable(&state, "visits"), Some(json!(["integer", "1"])));
+    state = send(&order, &state, "add_note", 1, json!({"message": "customer note"})).0;
+    assert_eq!(variable(&state, "visits"), Some(json!(["integer", "2"])));
+    state = send(&order, &state, "submit", 2, json!({"amount": 80, "priority": "normal"})).0;
+    assert!(active(&state, "work.approved"));
+    assert_eq!(variable(&state, "priority"), Some(json!(["string", "normal"])));
+    assert_eq!(variable(&state, "note_present"), Some(json!(["boolean", false])));
+    state = send(&order, &state, "local_review", 3, json!({})).0;
+    assert!(active(&state, "work.review"));
+    assert_eq!(variable(&state, "visits"), Some(json!(["integer", "2"])));
+    state = send(&order, &state, "reset_review", 4, json!({})).0;
+    assert_eq!(variable(&state, "visits"), Some(json!(["integer", "1"])));
+    state = send(&order, &state, "submit", 5, json!({"amount": 500, "priority": "normal", "note": "manual review"})).0;
+    assert!(active(&state, "work.rejected"));
+    state = send(&order, &state, "pause", 6, json!({})).0;
+    assert!(active(&state, "paused"));
+    assert!(variable(&state, "visits").is_none());
+    state = send(&order, &state, "resume", 7, json!({})).0;
+    assert!(active(&state, "work.rejected"));
+    assert_eq!(variable(&state, "visits"), Some(json!(["integer", "1"])));
+    state = send(&order, &state, "pause", 8, json!({})).0;
+    state = send(&order, &state, "restart", 9, json!({})).0;
+    assert!(active(&state, "work.review"));
+    state = send(&order, &state, "env", 10, json!({"changed": {"region": "west"}})).0;
+    assert_eq!(variable(&state, "region"), Some(json!(["string", "west"])));
+    assert_eq!(variable(&state, "applied_region"), Some(json!(["string", "west"])));
+    state = send(&order, &state, "root_restart", 11, json!({})).0;
+    assert!(active(&state, "work.review"));
+    let history = load(examples, "core-history-tour.yaml");
+    let mut state = create(&history, "history_tour", "history-tour", "history-tour:create", &Bindings::default()).unwrap();
+    for (index, event) in ["advance", "leave_shallow", "resume_shallow"].iter().enumerate() {
+        state = send(&history, &state, event, 20 + index as u8, json!({})).0;
     }
-    assert!(active(
-        &history_state,
-        "shallow_zone.shallow_outer.shallow_first"
-    ));
-    for (sequence, event) in [
-        "enter_deep",
-        "advance",
-        "leave_deep",
-        "resume_deep",
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        history_state = send(
-            &history_bundle,
-            &history_state,
-            event,
-            23 + sequence as u8,
-            no_payload(),
-        )
-        .state
-        .expect("deep history step succeeds");
+    assert!(active(&state, "shallow_zone.shallow_outer.shallow_first"));
+    for (index, event) in ["enter_deep", "advance", "leave_deep", "resume_deep"].iter().enumerate() {
+        state = send(&history, &state, event, 23 + index as u8, json!({})).0;
     }
-    assert!(active(
-        &history_state,
-        "deep_zone.deep_outer.deep_second"
-    ));
-    assert_eq!(
-        history_state.root.visible_variables()["visits"],
-        Value::Int(10)
-    );
-
-    let yaml_bundle = load(examples, "core-yaml-values.yaml")?;
-    let created = create(
-        &yaml_bundle,
-        "yaml_value_cycle",
-        "yaml-cycle",
-        "yaml-cycle:create",
-        &Bindings::default(),
-    );
-    let mut yaml_state = created.state.expect("YAML cycle creation succeeds");
-    for (sequence, event) in ["no", "off", "yes", "on"].into_iter().enumerate() {
-        yaml_state = send(
-            &yaml_bundle,
-            &yaml_state,
-            event,
-            40 + sequence as u8,
-            no_payload(),
-        )
-        .state
-        .expect("YAML cycle step succeeds");
+    assert!(active(&state, "deep_zone.deep_outer.deep_second"));
+    assert_eq!(variable(&state, "visits"), Some(json!(["integer", "10"])));
+    let yaml = load(examples, "core-yaml-values.yaml");
+    let mut state = create(&yaml, "yaml_value_cycle", "yaml-cycle", "yaml-cycle:create", &Bindings::default()).unwrap();
+    for (index, event) in ["no", "off", "yes", "on"].iter().enumerate() {
+        state = send(&yaml, &state, event, 40 + index as u8, json!({"value": event})).0;
     }
-    assert!(active(&yaml_state, "no"));
-    assert_eq!(
-        yaml_state.root.visible_variables()["observed_value"],
-        Value::String("on".to_string())
-    );
-
-    let stop_bundle = load(examples, "core-choice-stop.yaml")?;
-    let created = create(
-        &stop_bundle,
-        "choice_stop",
-        "choice-stop",
-        "choice-stop:create",
-        &Bindings::default(),
-    );
-    let stop_state = created.state.expect("stop creation succeeds");
-    let stopped = send(
-        &stop_bundle,
-        &stop_state,
-        "go",
-        50,
-        no_payload(),
-    );
-    assert_eq!(stopped.status, ResultStatus::Completed);
-    assert_eq!(stopped.emissions.len(), 1);
-    assert_eq!(
-        stopped.emissions[0].payload["stage"],
-        Value::String("before_stop".to_string())
-    );
-
-    println!(
-        "order=work.review; history=deep_second; \
-         yaml=no; stop=completed"
-    );
-    Ok(())
+    assert!(active(&state, "no"));
+    assert_eq!(variable(&state, "observed_value"), Some(json!(["string", "on"])));
+    let stop = load(examples, "core-choice-stop.yaml");
+    let state = create(&stop, "choice_stop", "choice-stop", "choice-stop:create", &Bindings::default()).unwrap();
+    let (_, stopped) = send(&stop, &state, "go", 50, json!({}));
+    assert_eq!(stopped["status"], "completed");
+    assert_eq!(stopped["emissions"].as_array().unwrap().len(), 1);
+    assert_eq!(stopped["emissions"][0]["payload"], json!(["map", [["stage", ["string", "before_stop"]]]]));
+    println!("order=work.review; history=deep_second; yaml=no; stop=completed");
 }
 ```
 
@@ -1249,56 +1057,56 @@ Before relying on a machine:
 ## 14. Conformance coverage
 
 The executable arbiter for these explanations is the pinned Determa State conformance
-suite. This chapter covers these exact v0.2.0 cases:
+suite. This chapter covers these exact candidate cases:
 
 - Hierarchy, initialization, scope, payloads, transitions, and external values:
-  [02-hierarchy-bubbling](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/02-hierarchy-bubbling),
-  [03-initial-action](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/03-initial-action),
-  [05-variable-scope](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/05-variable-scope),
-  [06-payload-typing](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/06-payload-typing),
-  [07-internal-external](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/07-internal-external),
-  [08-local-vs-external](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/08-local-vs-external), and
-  [15-external-env-refresh](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/15-external-env-refresh).
+  [02-hierarchy-bubbling](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/02-hierarchy-bubbling),
+  [03-initial-action](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/03-initial-action),
+  [05-variable-scope](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/05-variable-scope),
+  [06-payload-typing](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/06-payload-typing),
+  [07-internal-external](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/07-internal-external),
+  [08-local-vs-external](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/08-local-vs-external), and
+  [15-external-env-refresh](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/15-external-env-refresh).
 - Choices and reachability:
-  [23-choice](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/23-choice),
-  [24-choice-chain](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/24-choice-chain),
-  [25-choice-invalid](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/25-choice-invalid),
-  [26-unreachable](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/26-unreachable),
-  [27-dead-branch](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/27-dead-branch),
-  [28-reachable-ok](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/28-reachable-ok), and
-  [53-compound-choice-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/53-compound-choice-lifecycle).
+  [23-choice](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/23-choice),
+  [24-choice-chain](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/24-choice-chain),
+  [25-choice-invalid](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/25-choice-invalid),
+  [26-unreachable](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/26-unreachable),
+  [27-dead-branch](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/27-dead-branch),
+  [28-reachable-ok](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/28-reachable-ok), and
+  [53-compound-choice-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/53-compound-choice-lifecycle).
 - History, lifecycle, and transition boundaries:
-  [10-history-deep](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/10-history-deep),
-  [11-history-shallow](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/11-history-shallow),
-  [32-history-resume-restart](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/32-history-resume-restart),
-  [33-history-capture-timing](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/33-history-capture-timing),
-  [34-history-first-entry](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/34-history-first-entry),
-  [35-shallow-deep-history](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/35-shallow-deep-history),
-  [36-history-variable-reinitialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/36-history-variable-reinitialization),
-  [37-destroyed-variable-write](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/37-destroyed-variable-write),
-  [39-ancestor-internal-transition](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/39-ancestor-internal-transition),
-  [40-noncanonical-transitions](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/40-noncanonical-transitions),
-  [42-initial-history-rejection](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/42-initial-history-rejection),
-  [43-self-history-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/43-self-history-lifecycle),
-  [44-local-history](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/44-local-history), and
-  [45-proper-ancestor-target](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/45-proper-ancestor-target).
+  [10-history-deep](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/10-history-deep),
+  [11-history-shallow](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/11-history-shallow),
+  [32-history-resume-restart](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/32-history-resume-restart),
+  [33-history-capture-timing](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/33-history-capture-timing),
+  [34-history-first-entry](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/34-history-first-entry),
+  [35-shallow-deep-history](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/35-shallow-deep-history),
+  [36-history-variable-reinitialization](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/36-history-variable-reinitialization),
+  [37-destroyed-variable-write](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/37-destroyed-variable-write),
+  [39-ancestor-internal-transition](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/39-ancestor-internal-transition),
+  [40-noncanonical-transitions](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/40-noncanonical-transitions),
+  [42-initial-history-rejection](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/42-initial-history-rejection),
+  [43-self-history-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/43-self-history-lifecycle),
+  [44-local-history](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/44-local-history), and
+  [45-proper-ancestor-target](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/45-proper-ancestor-target).
 - Variable creation, defaults, parsing, and stop interruption:
-  [56-variable-initialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/56-variable-initialization),
-  [57-creation-binding-defaults](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/57-creation-binding-defaults),
-  [58-missing-creation-binding](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/58-missing-creation-binding),
-  [59-payload-default-materialization](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/59-payload-default-materialization),
-  [60-payload-default-validation](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/60-payload-default-validation),
-  [62-parsed-value-model](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/62-parsed-value-model),
-  [63-entry-stop-interruption](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/63-entry-stop-interruption),
-  [84-choice-stop-chain](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/84-choice-stop-chain), and
-  [116-legacy-format-policy](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/116-legacy-format-policy).
+  [56-variable-initialization](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/56-variable-initialization),
+  [57-creation-binding-defaults](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/57-creation-binding-defaults),
+  [58-missing-creation-binding](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/58-missing-creation-binding),
+  [59-payload-default-materialization](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/59-payload-default-materialization),
+  [60-payload-default-validation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/60-payload-default-validation),
+  [62-parsed-value-model](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/62-parsed-value-model),
+  [63-entry-stop-interruption](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/63-entry-stop-interruption),
+  [84-choice-stop-chain](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/84-choice-stop-chain), and
+  [116-legacy-format-policy](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/116-legacy-format-policy).
 
 Normative references:
-[parsing and format identity §2](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#2-conformance-parsing-and-format-identity),
-[states §4.6](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#46-state-nodes),
-[transitions §4.7](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#47-transitions),
-[hierarchical dispatch §6.3](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#63-hierarchical-dispatch),
-[execution order §6.4](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#64-transition-execution-order),
-[choice and history §6.5](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#65-choice-and-history),
+[parsing and format identity §2](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#2-conformance-parsing-and-format-identity),
+[states §4.6](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#46-state-nodes),
+[transitions §4.7](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#47-transitions),
+[hierarchical dispatch §6.3](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#63-hierarchical-dispatch),
+[execution order §6.4](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#64-transition-execution-order),
+[choice and history §6.5](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#65-choice-and-history),
 and
-[stop interruption §6.6](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#66-stop-interruption).
+[stop interruption §6.6](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#66-stop-interruption).

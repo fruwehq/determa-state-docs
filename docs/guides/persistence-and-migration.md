@@ -5,8 +5,8 @@ It stores a portable aggregate, ignores a duplicate input, records an output int
 restarts between commands, and lazily upgrades a live order from machine version 1 to
 version 2.
 
-The tutorial uses Determa State 0.2.0 and numeric `format: 1`. The normative rules are
-in [specification section 16](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#16-portable-persistence-and-definition-migration).
+The tutorial uses the unreleased Determa State 0.3.0 candidate and numeric `format: 1`. The normative rules are
+in [specification section 16](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#16-portable-persistence-and-definition-migration).
 
 ## 1. Create an empty project
 
@@ -15,11 +15,12 @@ mkdir determa-persistence-tutorial
 cd determa-persistence-tutorial
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install determa-state==0.2.0
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
 mkdir -p rust/src
 ```
 
-Nothing below depends on this documentation repository. Each file is shown in full.
+The install command pins the exact public candidate commit. There is no published
+0.3.0 package. Each tutorial source file is shown in full.
 
 ## 2. Define version 1
 
@@ -143,27 +144,55 @@ does not say what should replace the deleted active state.
   "target_aggregate_shape_fingerprint": "sha256:0e97046b585ae04ffc523b94785ce7180e6bb92ca03a901fd3f998294f4b64fd",
   "mode": "transform",
   "mappings": {
-    "machines": [{"source_definition_pointer": "/machines/0/root", "target_definition_pointer": "/machines/0/root"}],
+    "machines": [
+      {
+        "source_definition_pointer": "/machines/0/root",
+        "target_definition_pointer": "/machines/0/root"
+      }
+    ],
     "active_states": [],
-    "variables": [{"operation": "copy", "source_declaration_pointer": "/machines/0/root/variables/order_id", "target_declaration_pointer": "/machines/0/root/variables/order_id"}],
+    "variables": [
+      {
+        "operation": "copy",
+        "source_declaration_pointer": "/machines/0/root/variables/order_id",
+        "target_declaration_pointer": "/machines/0/root/variables/order_id"
+      }
+    ],
     "history": [],
     "components": [],
     "owned_runtimes": [],
     "lifetime_holders": [],
     "counters": [
-      {"operation": "map", "source_definition_pointer": "/machines/0/root", "target_definition_pointer": "/machines/0/root"},
-      {"operation": "map", "source_definition_pointer": "/machines/0/root/states/pending", "target_definition_pointer": "/machines/0/root/states/pending"},
-      {"operation": "map", "source_definition_pointer": "/machines/0/root/states/awaiting_fulfillment", "target_definition_pointer": "/machines/0/root/states/awaiting_shipping"}
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root",
+        "target_definition_pointer": "/machines/0/root"
+      },
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root/states/pending",
+        "target_definition_pointer": "/machines/0/root/states/pending"
+      },
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root/states/awaiting_fulfillment",
+        "target_definition_pointer": "/machines/0/root/states/awaiting_shipping"
+      }
     ]
   },
-  "terminal_policy": {"completed": "preserve", "faulted": "preserve"},
+  "terminal_policy": {
+    "completed": "preserve",
+    "faulted": "preserve"
+  },
   "resource_requirements": {
     "maximum_transformed_output_bytes": "64",
     "maximum_cel_expression_length": "0",
     "maximum_cel_ast_nodes": "0",
     "maximum_cel_evaluation_steps": "0"
   },
-  "migration_descriptor_digest": "sha256:0ea15292bbed1768fe16600da9d2bb771568aff65ae20118d4f6b8485163671d"
+  "queued_event_rules": [],
+  "queued_event_default": "preserve_if_compatible",
+  "migration_descriptor_digest": "sha256:0c012ccf4f3298567d1b531cdb17ce71d8306df54478927ab98750a83613c42c"
 }
 ```
 
@@ -185,30 +214,62 @@ the same; this is not a reset and it does not run entry or exit actions.
   "target_aggregate_shape_fingerprint": "sha256:0e97046b585ae04ffc523b94785ce7180e6bb92ca03a901fd3f998294f4b64fd",
   "mode": "transform",
   "mappings": {
-    "machines": [{"source_definition_pointer": "/machines/0/root", "target_definition_pointer": "/machines/0/root"}],
-    "active_states": [{
-      "source_leaf_state_definition_pointer": "/machines/0/root/states/awaiting_fulfillment",
-      "target_leaf_state_definition_pointers": ["/machines/0/root/states/awaiting_shipping"]
-    }],
-    "variables": [{"operation": "copy", "source_declaration_pointer": "/machines/0/root/variables/order_id", "target_declaration_pointer": "/machines/0/root/variables/order_id"}],
+    "machines": [
+      {
+        "source_definition_pointer": "/machines/0/root",
+        "target_definition_pointer": "/machines/0/root"
+      }
+    ],
+    "active_states": [
+      {
+        "source_leaf_state_definition_pointer": "/machines/0/root/states/awaiting_fulfillment",
+        "target_leaf_state_definition_pointers": [
+          "/machines/0/root/states/awaiting_shipping"
+        ]
+      }
+    ],
+    "variables": [
+      {
+        "operation": "copy",
+        "source_declaration_pointer": "/machines/0/root/variables/order_id",
+        "target_declaration_pointer": "/machines/0/root/variables/order_id"
+      }
+    ],
     "history": [],
     "components": [],
     "owned_runtimes": [],
     "lifetime_holders": [],
     "counters": [
-      {"operation": "map", "source_definition_pointer": "/machines/0/root", "target_definition_pointer": "/machines/0/root"},
-      {"operation": "map", "source_definition_pointer": "/machines/0/root/states/pending", "target_definition_pointer": "/machines/0/root/states/pending"},
-      {"operation": "map", "source_definition_pointer": "/machines/0/root/states/awaiting_fulfillment", "target_definition_pointer": "/machines/0/root/states/awaiting_shipping"}
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root",
+        "target_definition_pointer": "/machines/0/root"
+      },
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root/states/pending",
+        "target_definition_pointer": "/machines/0/root/states/pending"
+      },
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root/states/awaiting_fulfillment",
+        "target_definition_pointer": "/machines/0/root/states/awaiting_shipping"
+      }
     ]
   },
-  "terminal_policy": {"completed": "preserve", "faulted": "preserve"},
+  "terminal_policy": {
+    "completed": "preserve",
+    "faulted": "preserve"
+  },
   "resource_requirements": {
     "maximum_transformed_output_bytes": "64",
     "maximum_cel_expression_length": "0",
     "maximum_cel_ast_nodes": "0",
     "maximum_cel_evaluation_steps": "0"
   },
-  "migration_descriptor_digest": "sha256:03f66443a799a4be413c50b00571f65a24d975f23add2a767922731c3fb4fc86"
+  "queued_event_rules": [],
+  "queued_event_default": "preserve_if_compatible",
+  "migration_descriptor_digest": "sha256:99ad718d0365410a52ad4201366d0d5bf51a89de2fb5e498a165466b4e1a2945"
 }
 ```
 
@@ -220,13 +281,17 @@ The host stores definitions and descriptors once under their content digests. An
 aggregate row stores only canonical aggregate bytes. One SQLite transaction owns the
 inbox decision, aggregate replacement, ordered outbox inserts, and migration audit.
 This implements the
-[lazy transactional host order in specification §16.11](https://github.com/fruwehq/determa-state-spec/blob/v0.2.0/SPEC.md#1611-lazy-transactional-host-ordering).
+lazy transactional host order in specification §16.11.
 
 <!-- determa-example: persistence-tutorial/app.py -->
 ```python
 from __future__ import annotations
 
 import json
+
+def encode(document):
+    return json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
+
 from pathlib import Path
 import sqlite3
 import sys
@@ -235,8 +300,8 @@ import determa.state as ds
 
 HERE = Path(__file__).resolve().parent
 TARGET = "sha256:e046130705827409a6263442a7f0c81c4153fee00f7d217600b3f6587334bf8a"
-GOOD = "sha256:03f66443a799a4be413c50b00571f65a24d975f23add2a767922731c3fb4fc86"
-BROKEN = "sha256:0ea15292bbed1768fe16600da9d2bb771568aff65ae20118d4f6b8485163671d"
+GOOD = "sha256:99ad718d0365410a52ad4201366d0d5bf51a89de2fb5e498a165466b4e1a2945"
+BROKEN = "sha256:0c012ccf4f3298567d1b531cdb17ce71d8306df54478927ab98750a83613c42c"
 
 
 class SQLiteResolver:
@@ -362,15 +427,19 @@ def artifact_cache(db):
 
 
 def delivery(state, event, event_id, payload=None):
-    return {"input": {
-        "event": event,
-        "event_id": event_id,
-        "target": {"root": {
-            "root_instance_id": state["root_instance_id"],
-            "root_runtime_id": state["root_runtime_id"],
-        }},
-        "payload": payload or {},
-    }}
+    envelope = ds.portable_envelope(event, event_id, {"root": {
+        "root_instance_id": state["root_instance_id"],
+        "root_runtime_id": state["root_runtime_id"],
+    }}, payload or {})
+    return {"delivery_mode": "input", "envelope": envelope,
+            "envelope_digest": ds.delivery_request_digest(
+                state["root_instance_id"], "input", envelope)}
+
+
+def process(state, candidate, resolver):
+    accepted = ds.admit(state, [candidate], resolver)
+    assert accepted["result"] == "accepted"
+    return ds.step(accepted["state"], state["root_runtime_id"], resolver)
 
 
 def create_order(db):
@@ -379,10 +448,10 @@ def create_order(db):
     ).fetchone()[0]
     bundle = ds.load_bundle(source)
     result = ds.create(bundle, "order", "order-100", "create:order-100", {})
-    encoded = ds.serialize_aggregate(bundle, result["state"])
+    encoded = encode(result["state"])
     db.execute("INSERT INTO aggregates VALUES(?,?)", ("order-100", encoded))
     db.commit()
-    assert ds.restore_aggregate(encoded, SQLiteResolver(db)).canonical_bytes == encoded
+    assert ds.restore_aggregate_v1(encoded, SQLiteResolver(db)).canonical_bytes == encoded
 
 
 def dispatch_once(db, event, event_id, payload=None):
@@ -398,12 +467,10 @@ def dispatch_once(db, event, event_id, payload=None):
         encoded = db.execute(
             "SELECT aggregate_bytes FROM aggregates WHERE root_instance_id='order-100'"
         ).fetchone()[0]
-        restored = ds.restore_aggregate(encoded, cache)
-        result = ds.dispatch(
-            restored.bundle, restored.state,
-            delivery(restored.state, event, event_id, payload),
-        )
-        next_bytes = ds.serialize_aggregate(restored.bundle, result["state"])
+        restored = ds.restore_aggregate_v1(encoded, cache)
+        result = process(restored.aggregate_envelope,
+                         delivery(restored.aggregate_envelope, event, event_id, payload), cache)
+        next_bytes = encode(result["state"])
         db.execute(
             "UPDATE aggregates SET aggregate_bytes=? WHERE root_instance_id='order-100'",
             (next_bytes,),
@@ -413,7 +480,7 @@ def dispatch_once(db, event, event_id, payload=None):
             (event_id, "order-100", result["status"], result["disposition"]),
         )
         for intent in result["emissions"]:
-            if intent["target"] == "external":
+            if "effect_id" in intent:
                 db.execute(
                     "INSERT INTO outbox VALUES(?,?,?,?)",
                     (intent["effect_id"], "order-100", intent["sequence"],
@@ -447,14 +514,15 @@ def quarantine_broken_migration(db):
             "SELECT aggregate_bytes FROM aggregates WHERE root_instance_id='order-100'"
         ).fetchone()[0]
         aggregate_digest = json.loads(encoded)["aggregate_state_digest"]
-        result = ds.migrate_aggregate(
-            encoded, TARGET, [BROKEN], cache, maintenance_mode=False
-        )
-        assert result.failure is not None
+        try:
+            ds.migrate_aggregate_v1(encoded, TARGET, [BROKEN], cache, maintenance_mode=False)
+        except ds.ArtifactError as failure:
+            code = failure.code
+        else:
+            raise AssertionError("incomplete migration must fail")
         assert db.execute(
             "SELECT aggregate_bytes FROM aggregates WHERE root_instance_id='order-100'"
         ).fetchone()[0] == encoded
-        code = result.failure.code
         db.execute(
             "INSERT INTO blocked_inbox VALUES(?,?,?)",
             (event_id, "order-100", code),
@@ -490,24 +558,17 @@ def migrate_and_complete(db):
             ("input-complete-1",),
         ).fetchone()
         encoded = db.execute("SELECT aggregate_bytes FROM aggregates").fetchone()[0]
-        restored = ds.restore_aggregate(encoded, cache)
-        result = ds.migrate_and_dispatch(
-            encoded, TARGET, [GOOD], cache,
-            delivery(restored.state, "complete", "input-complete-1"),
-            maintenance_mode=False,
-        )
-        assert result.failure is None
-        db.execute("UPDATE aggregates SET aggregate_bytes=?", (result.aggregate_bytes,))
-        db.execute(
-            "INSERT INTO inbox VALUES(?,?,?,?)",
-            ("input-complete-1", "order-100", result.status, result.disposition),
-        )
-        for audit in result.audit_records:
-            db.execute(
-                "INSERT INTO migration_audit VALUES(?,?,?)",
-                ("order-100", int(audit["migration_sequence"]),
-                 json.dumps(audit, sort_keys=True)),
-            )
+        restored = ds.restore_aggregate_v1(encoded, cache)
+        migration = ds.migrate_aggregate_v1(
+            encoded, TARGET, [GOOD], cache, maintenance_mode=False)
+        migrated = migration["aggregate_state"]
+        result = process(migrated, delivery(migrated, "complete", "input-complete-1"), cache)
+        db.execute("UPDATE aggregates SET aggregate_bytes=?", (encode(result["state"]),))
+        db.execute("INSERT INTO inbox VALUES(?,?,?,?)",
+                   ("input-complete-1", "order-100", result["status"], result["disposition"]))
+        for audit in migration["audit_records"]:
+            db.execute("INSERT INTO migration_audit VALUES(?,?,?)",
+                       ("order-100", int(audit["migration_sequence"]), json.dumps(audit, sort_keys=True)))
         if blocked:
             db.execute(
                 "DELETE FROM blocked_inbox WHERE event_id=?", ("input-complete-1",)
@@ -516,7 +577,7 @@ def migrate_and_complete(db):
                 "DELETE FROM quarantine WHERE root_instance_id='order-100'"
             )
         db.commit()
-        return f"{result.status}:{result.disposition}"
+        return f"{result['status']}:{result['disposition']}"
     except Exception:
         db.rollback()
         raise
@@ -525,10 +586,11 @@ def migrate_and_complete(db):
 def inspect(db):
     encoded = db.execute("SELECT aggregate_bytes FROM aggregates").fetchone()[0]
     document = json.loads(encoded)
-    restored = ds.restore_aggregate(encoded, SQLiteResolver(db))
-    root = restored.state["runtimes"][restored.state["root_runtime_id"]]
+    restored = ds.restore_aggregate_v1(encoded, SQLiteResolver(db))
+    root = next(runtime for runtime in restored.aggregate_envelope["runtimes"]
+                if runtime["runtime_id"] == restored.aggregate_envelope["root_runtime_id"])
     return {
-        "active": root["active"],
+        "active": root["active_leaf_state_definition_pointers"],
         "aggregate_state_digest": document["aggregate_state_digest"],
         "definition_fingerprint": document["validated_bundle_fingerprint"],
         "machine_version": document["root_machine_version"],
@@ -687,181 +749,107 @@ database concern rather than a Rust engine result.
 <!-- determa-example: persistence-tutorial/rust/Cargo.toml -->
 ```toml
 [package]
-name = "determa-persistence-migration-tutorial"
-version = "0.2.0"
+name = "determa-persistence-tutorial"
+version = "0.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.2.0"
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
 serde_json = "1"
+serde_json_canonicalizer = "0.3"
+sha2 = "0.10"
 ```
 
 <!-- determa-example: persistence-tutorial/rust/src/main.rs -->
 ```rust
-use determa_state::{
-    create, dispatch, encode_aggregate, load_bundle, migrate_aggregate, migrate_and_dispatch,
-    restore_aggregate, Bindings, Delivery, Envelope, InMemoryDefinitionResolver, MigrationRequest,
-    ResourceLimits, RuntimeStatus, Target, Value,
-};
-use serde_json::Value as JsonValue;
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    env, fs,
-    path::PathBuf,
-};
+use determa_state::{admit, create, load_bundle, restore_aggregate, step,
+    migrate_aggregate_route, AdmissionDelivery, Aggregate, Bindings, Bundle,
+    InMemoryDefinitionResolver, MigrationRequest, QueueEnvelope, ResourceLimits, TypedValue};
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
+use std::{env, fs, path::PathBuf};
 
-fn delivery(
-    state: &determa_state::AggregateState,
-    event: &str,
-    event_id: &str,
-    payload: BTreeMap<String, Value>,
-) -> Delivery {
-    Delivery::Input(Envelope {
-        event: event.to_string(),
-        event_id: event_id.to_string(),
-        target: Target::Root {
-            root_instance_id: state.root_instance_id.clone(),
-            root_runtime_id: state.root.runtime_id.clone(),
-        },
-        payload,
-        correlation_id: None,
-    })
+fn root(state: &Aggregate) -> &Value {
+    state.value()["runtimes"].as_array().unwrap().iter()
+        .find(|runtime| runtime["runtime_id"] == state.value()["root_runtime_id"]).unwrap()
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let root = PathBuf::from(env::args().nth(1).expect("project path"));
-    let source = load_bundle(&fs::read_to_string(root.join("order-v1.yaml"))?)?;
-    let target = load_bundle(&fs::read_to_string(root.join("order-v2.yaml"))?)?;
-    let good_bytes = fs::read(root.join("migration-good.json"))?;
-    let bad_bytes = fs::read(root.join("migration-missing-state.json"))?;
-    let good: JsonValue = serde_json::from_slice(&good_bytes)?;
-    let bad: JsonValue = serde_json::from_slice(&bad_bytes)?;
-    let good_digest = good["migration_descriptor_digest"]
-        .as_str()
-        .unwrap()
-        .to_string();
-    let bad_digest = bad["migration_descriptor_digest"]
-        .as_str()
-        .unwrap()
-        .to_string();
+fn typed(value: &Value) -> TypedValue {
+    match value {
+        Value::Null => TypedValue::Null,
+        Value::Bool(value) => TypedValue::Boolean(*value),
+        Value::String(value) => TypedValue::String(value.clone()),
+        Value::Number(value) => if value.is_i64() { TypedValue::Integer(value.as_i64().unwrap()) } else { TypedValue::Float(value.as_f64().unwrap()) },
+        Value::Array(values) => TypedValue::List(values.iter().map(typed).collect()),
+        Value::Object(values) => TypedValue::Map(values.iter().map(|(name, value)| (name.clone(), typed(value))).collect()),
+    }
+}
 
+fn input(state: &Aggregate, event: &str, event_id: &str, payload: Value, correlation: Option<&str>) -> QueueEnvelope {
+    QueueEnvelope { event: event.into(), event_id: event_id.into(), cause_id: event_id.into(),
+        source: json!({"host": true}), target: root(state)["target_identity"].clone(), payload: typed(&payload),
+        correlation_id: correlation.map(str::to_owned) }
+}
+
+fn process(bundle: &Bundle, state: &Aggregate, envelope: QueueEnvelope, resolver: &InMemoryDefinitionResolver) -> Result<(Aggregate, Value), determa_state::ArtifactError> {
+    let bytes = serde_json_canonicalizer::to_vec(&json!([
+        "determa-inbox-envelope-digest-1", "1", state.value()["root_instance_id"], "input", envelope,
+    ])).unwrap();
+    let accepted = admit(bundle, state, &[AdmissionDelivery { delivery_mode: "input".into(), envelope,
+        envelope_digest: format!("sha256:{:x}", Sha256::digest(bytes)) }])?;
+    let accepted = restore_aggregate(&serde_json_canonicalizer::to_vec(&accepted["state"]).unwrap(), resolver).unwrap();
+    let result = step(bundle, &accepted, accepted.value()["root_runtime_id"].as_str().unwrap())?;
+    Ok((restore_aggregate(&serde_json_canonicalizer::to_vec(&result["state"]).unwrap(), resolver).unwrap(), result))
+}
+
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let path = PathBuf::from(env::args().nth(1).expect("project path"));
+    let source = load_bundle(&fs::read_to_string(path.join("order-v1.yaml"))?)?;
+    let target = load_bundle(&fs::read_to_string(path.join("order-v2.yaml"))?)?;
     let mut resolver = InMemoryDefinitionResolver::default();
     resolver.insert(source.clone(), true);
     resolver.insert(target.clone(), true);
-    resolver.insert_descriptor(good_digest.clone(), good_bytes, true);
-    resolver.insert_descriptor(bad_digest.clone(), bad_bytes, true);
-
-    let initial = create(
-        &source,
-        "order",
-        "order-100",
-        "create:order-100",
-        &Bindings::default(),
-    )
-    .state
-    .unwrap();
-    let submitted = dispatch(
-        &source,
-        &initial,
-        Some(delivery(
-            &initial,
-            "submit",
-            "input-submit-1",
-            BTreeMap::from([(
-                "order_id".to_string(),
-                Value::String("order-100".to_string()),
-            )]),
-        )),
-    );
-    assert_eq!(submitted.emissions.len(), 1);
-    let submitted_state = submitted.state.unwrap();
-    let (_, encoded) = encode_aggregate(&source, &submitted_state)?;
-    let restored = restore_aggregate(&encoded, &resolver)?;
-    assert_eq!(
-        restored.root.active,
-        BTreeSet::from(["root".to_string(), "awaiting_fulfillment".to_string(),])
-    );
-
-    let broken = migrate_aggregate(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![bad_digest.clone()],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-    )
-    .expect_err("missing active-state mapping");
+    let mut digests = Vec::new();
+    for name in ["migration-missing-state.json", "migration-good.json"] {
+        let bytes = fs::read(path.join(name))?;
+        let descriptor: Value = serde_json::from_slice(&bytes)?;
+        let digest = descriptor["migration_descriptor_digest"].as_str().unwrap().to_owned();
+        resolver.insert_descriptor(digest.clone(), bytes, true);
+        digests.push(digest);
+    }
+    let initial = create(&source, "order", "order-100", "create:order-100", &Bindings::default())?;
+    let submit = input(&initial, "submit", "input-submit-1", json!({"order_id":"order-100"}), None);
+    let (submitted, result) = process(&source, &initial, submit, &resolver)?;
+    assert_eq!(result["emissions"].as_array().unwrap().len(), 1);
+    let bytes = serde_json_canonicalizer::to_vec(submitted.value())?;
+    let restored = restore_aggregate(&bytes, &resolver)?;
+    assert_eq!(root(&restored)["active_leaf_state_definition_pointers"],
+               json!(["/machines/0/root/states/awaiting_fulfillment"]));
+    let request = |digest: &str| MigrationRequest {
+        migration_route: vec![digest.to_owned()],
+        target_validated_bundle_fingerprint: target.fingerprint.clone(), maintenance_mode: false,
+    };
+    let broken = migrate_aggregate_route(&restored, &request(&digests[0]), &resolver, &ResourceLimits::default())
+        .expect_err("missing active-state mapping");
     assert_eq!(broken.code.as_str(), "migration_totality_failure");
-    let broken_retry = migrate_aggregate(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![bad_digest],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-    )
-    .expect_err("the same incomplete route fails again");
-    assert_eq!(broken_retry, broken);
-
-    let preview = migrate_aggregate(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![good_digest.clone()],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-    )?;
-    assert_eq!(preview.aggregate.root.runtime_id, restored.root.runtime_id);
-    assert_eq!(
-        preview.aggregate.next_logical_step_sequence,
-        restored.next_logical_step_sequence
-    );
-    assert_eq!(
-        preview.aggregate.next_output_sequence,
-        restored.next_output_sequence
-    );
-
-    let completed = migrate_and_dispatch(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![good_digest],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-        Some(delivery(
-            &restored,
-            "complete",
-            "input-complete-1",
-            BTreeMap::new(),
-        )),
-    )?;
-    assert_eq!(
-        completed.migration.aggregate_envelope.root_machine_version,
-        "2"
-    );
-    assert_eq!(
-        completed.migration.aggregate_envelope.migration_sequence,
-        "1"
-    );
-    assert_eq!(completed.migration.audit_records.len(), 1);
-    assert_eq!(
-        completed.migration.aggregate.root.status,
-        RuntimeStatus::Completed
-    );
-
-    println!(
-        "restored=v1; duplicate=ignored; outbox=1; \
-         pure_failure=migration_totality_failure; migrated=v2; status=completed"
-    );
+    let retry = migrate_aggregate_route(&restored, &request(&digests[0]), &resolver, &ResourceLimits::default())
+        .expect_err("same incomplete route");
+    assert_eq!(retry, broken);
+    assert_eq!(serde_json_canonicalizer::to_vec(restored.value())?, bytes);
+    let migration = migrate_aggregate_route(&restored, &request(&digests[1]), &resolver, &ResourceLimits::default())?;
+    let migrated = restore_aggregate(&serde_json_canonicalizer::to_vec(&migration["aggregate_state"])?, &resolver)?;
+    for field in ["root_runtime_id", "next_logical_step_sequence", "next_output_sequence"] {
+        assert_eq!(migrated.value()[field], restored.value()[field]);
+    }
+    assert_eq!(migration["audit_records"].as_array().unwrap().len(), 1);
+    let complete = input(&migrated, "complete", "input-complete-1", json!({}), None);
+    let (completed, result) = process(&target, &migrated, complete, &resolver)?;
+    assert_eq!(completed.value()["root_machine_version"], "2");
+    assert_eq!(completed.value()["migration_sequence"], "1");
+    assert_eq!(result["status"], "completed");
+    println!("restored=v1; outbox=1; pure_failure=migration_totality_failure; migrated=v2; status=completed");
     Ok(())
 }
 ```
@@ -881,7 +869,7 @@ restored=v1; duplicate=ignored; outbox=1; quarantined=migration_totality_failure
 The Rust engine trace prints:
 
 ```text
-restored=v1; duplicate=ignored; outbox=1; pure_failure=migration_totality_failure; migrated=v2; status=completed
+restored=v1; outbox=1; pure_failure=migration_totality_failure; migrated=v2; status=completed
 ```
 
 ## 8. Inspect and recover safely
@@ -901,21 +889,6 @@ or rewrite every database row during deployment. Lazy migration keeps dormant ro
 cheap while the central registry retains the old declarative definitions needed to
 interpret them. Definition garbage collection must therefore be reference-aware.
 
-This focused example covers round-trip encoding, definition resolution, unchanged
-restoration, explicit active-state remapping, deleted-state totality, counter and
-identity preservation, rollback, migration plus dispatch, and the host transaction
-order demonstrated by conformance cases
-[94](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/94-aggregate-wire-round-trip),
-[96](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/96-definition-resolution),
-[98](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/98-unchanged-definition-resume),
-[100](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/100-explicit-active-state-remap),
-[101](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/101-deleted-active-state-totality),
-[106](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/106-counter-and-identity-preservation),
-[108](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/108-migration-retry-and-rollback), and
-[109](https://github.com/fruwehq/determa-state-conformance/tree/v0.2.0/conformance/core/109-migration-then-dispatch).
+## Normative coverage
 
-Continue with the
-[persistence and migration reference lab](persistence-migration-reference.md) for
-package attachments, variable/history/component/owned-runtime transforms, chained
-routes, terminal maintenance migration, resource limits, occurrence-local transform
-binding, and large decimal identity projections.
+- [§16.11](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#1611-lazy-transactional-host-ordering)
