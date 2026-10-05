@@ -3,7 +3,7 @@
   "inputs": {
     ".github/workflows/docs.yml": "98feb6fb55f8f94a373b867e1d8df881ae76a7ecc85bd719e374f85f3666be39",
     "Makefile": "b45013c9f49a46d8674279c9c510b21662c30f7d442842143c296ce08a067cc6",
-    "PUBLICATION_MANIFEST.md": "74f555bd14e83b9b551e85a67291f1c565d64736432a0858681077b2f3feb2ba",
+    "PUBLICATION_MANIFEST.md": "eae476a7ab68526d6bb7e44a986567c66e011318d48328a4beb24fdf66ab12cd",
     "STATE_VERSION": "d915cc95d6ca8f47ae297713ed46d4e5c5d99ddd29fc3c61e263bdf305f2b5b0",
     "audit/packages/python-native-interim.json": "b5a263ce51f26cf15c3dcb2bc09acea9de3794b14a00fc3a9f4fb904ab8cf129",
     "audit/packages/rust-native-interim.json": "f920c990b2ea3fbc8f79eaa45cefe986b60eb3c67aa8b1059a518ad1fd9d9f65",
@@ -15,7 +15,7 @@
     "docs/guides/effects-faults-hosting.md": "b114c279433a5c70c4fbdfed762f7821e3b3aa11b542a9cc743f926daacdce69",
     "docs/guides/execution-checkpoint-hosting.md": "ba872d3984a1c016a7a358dd998fcc546ea0085e830c37042ca49d9d792b85de",
     "docs/guides/mailboxes-and-inspection.md": "20bf6ab2c3c5cd10438e5e79c42d9af4d4f63f944d68c3eebc8eba8caecb1779",
-    "docs/guides/optional-host-profiles.md": "ac3a20fec226d163a3a310948f292556ae8322f4a9cf1e76a83ed3909a133ddc",
+    "docs/guides/optional-host-profiles.md": "9162da9a97ecaea8e9b1b20cfde224d7264edaf20ee58579aedf5a3f9aa23acc",
     "docs/guides/persistence-and-migration.md": "cb73026ee3fcbb4bc1ca9fc3e760f8e11e01152f3f5effeee2bd4c30d783fcc2",
     "docs/guides/persistence-migration-reference.md": "8dc9d7f7073fdd705403dac5822600923ce2e817dee247f5770f4362c346325f",
     "docs/guides/public-host-client.md": "ab845f75729568f830a3e1357bc1afcb2d0db95e7556f9ad230c3a26bf9a0c5a",

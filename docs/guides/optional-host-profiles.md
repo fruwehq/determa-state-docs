@@ -23,8 +23,9 @@ Python and Rust now both execute the seven native inspection vectors and all 52
 runtime-provider vectors through reviewed production operations. Rust's native-effect
 journal, complete local authority profile and the synchronized archive, timer and
 recovery implementations are still under development. Python's timer draft includes
-actual coordinated admission and process-kill restart tests; its verified installation,
-proved-fate recovery and full operational profile are unfinished. Those draft tests
+actual coordinated admission, strictly local native-fate reclaim and process-kill
+restart tests; verified installation, archive/recovery/authority composition and the
+full operational profile are unfinished. Those draft tests
 prove their stated transaction cuts, not the entire recovery or relocation contract.
 
 The [publication manifest](https://github.com/fruwehq/determa-state-docs/blob/fruwe/publication-manifest-v030/PUBLICATION_MANIFEST.md)

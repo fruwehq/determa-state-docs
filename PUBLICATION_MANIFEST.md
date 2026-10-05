@@ -31,19 +31,31 @@ These counts establish those checkpoints' scope, not completion of the remaining
 optional host implementations.
 
 Draft Python PR111 and Rust PR65 continue timer and authority/effect integration.
-Python timer checkpoint `5d284e83bc1f120a5d427198ce1af9c052542f83` passed scoped
-independent review, 552 unit tests and six dedicated tests against actual PostgreSQL.
-It includes spawned-process SIGKILL before and after coordinated commit and immutable
-storage-bound original-request/result/artifact evidence. Verified installation,
-proved-fate reclaim and the full operational profile are unfinished.
-Rust authority checkpoint `ad21fc0404d14dd3b6738d6cb91d217fb49583fc` passed scoped
-independent review, 11 authority integration tests, a deterministic concurrent-writer
-snapshot regression and Rust1.86 library/test Clippy. Guarded checkpoint loads and
-conflict-return bytes share the same validated native snapshot; immutable allocation
-binds original owner bytes/digest. Complete frozen inventories, worker fences, fate,
-relocation and committed native effects remain unfinished. Newer crash tests are
-being validated; evolving checkpoint SHAs are recorded in PR bodies and the scope
-audit. Scoped review does not approve a full profile.
+Python timer checkpoint `fd90681c534707ba24826d02b0f962f3b1b84445` passed scoped
+independent review, 569 unit tests, 1,083 pinned conformance tests and six dedicated
+tests against actual PostgreSQL. It includes spawned-process SIGKILL before and after
+coordinated commit, immutable storage-bound original-request/result/artifact evidence
+and strictly local native-fate reclaim. Replacement fencing requires the native
+writer lock, complete history, permanent checkpoint receipts and unchanged trusted
+implementation/configuration. Independently admitted matching events do not become
+helper completion proof. Review caught replaceable-method and mutable-code bypasses;
+pre-invocation dispatch checks and regression tests resolve them. Verified installation,
+archive/recovery/authority composition and the full operational profile are unfinished.
+Rust authority checkpoint `85c4c1d1b3c41de2f3f50b241ea4bb5576181659` passed scoped
+independent review, 131 all-feature tests, all 19 required fresh native execution-store
+gates with actual PostgreSQL, and all-target Rust1.86 Clippy. Guarded checkpoint loads
+and conflict-return bytes share the same validated native snapshot; immutable allocation
+binds original owner bytes/digest. Real staged-write failure and SIGKILL before/after
+commit use the same production native SQL; fresh reopen verifies retained replay.
+Child stdout isolation preserves strict gate reporting. Complete frozen inventories,
+worker fences, fate profile, relocation and committed native effects remain unfinished.
+Infrastructure draft PR24 at `10790a63013a657eef7d295892085e873982f505` has a separate
+durable provider and bounded foreground process bridge. Eleven tests and scoped
+independent review passed, including SIGKILL/SIGSTOP/timeout/restart and exact retained
+native evidence. Canonical-byte verification preserves JSON boolean/integer distinctions.
+Host/machine/verified-handler integration and the full lifecycle matrix remain unfinished.
+Evolving checkpoint SHAs and CI results are recorded in PR bodies and the scope audit.
+Scoped review does not approve a full profile.
 Only ordinary pushes are permitted; verify each remote head. Earlier force pushes
 remain an acknowledged process violation.
 
