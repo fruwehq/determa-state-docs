@@ -28,7 +28,16 @@ def candidate_lock():
     lock["lifecycle"] = "candidate"
     lock["state_version"] = "0.3.0"
     for row in lock["repositories"].values():
-        del row["tag"]
+        row.pop("tag", None)
+    return lock
+
+
+def released_lock():
+    lock = candidate_lock()
+    lock["lifecycle"] = "released"
+    lock["state_version"] = "0.2.0"
+    for row in lock["repositories"].values():
+        row["tag"] = "v0.2.0"
     return lock
 
 
@@ -122,7 +131,7 @@ def test_candidate_metadata_fails_closed(tmp_path, mutation):
 
 
 def test_released_tag_must_match_version(tmp_path):
-    lock = source_lock.load_lock()
+    lock = released_lock()
     lock["repositories"]["rust"]["tag"] = "v0.3.0"
     with pytest.raises(ValueError, match="release tag"):
         source_lock.load_lock(save_lock(tmp_path, lock))
@@ -131,14 +140,14 @@ def test_released_tag_must_match_version(tmp_path):
 def test_released_tag_pointing_elsewhere_fails(monkeypatch):
     monkeypatch.setattr(check_latest, "github_json", lambda url, token: {"sha": "0" * 40})
     with pytest.raises(SystemExit, match="does not resolve to pinned commit"):
-        check_latest.check_released_freshness(source_lock.load_lock(), (0, 2, 0), None)
+        check_latest.check_released_freshness(released_lock(), (0, 2, 0), None)
 
 
 def test_source_links_use_commit_only_during_candidate(tmp_path, monkeypatch):
     path = save_lock(tmp_path, candidate_lock())
     monkeypatch.setattr(validate, "load_lock", lambda: source_lock.load_lock(path))
     assert validate.source_ref("specification") == candidate_lock()["repositories"]["specification"]["commit"]
-    monkeypatch.setattr(validate, "load_lock", source_lock.load_lock)
+    monkeypatch.setattr(validate, "load_lock", released_lock)
     assert validate.source_ref("specification") == "v0.2.0"
 
 

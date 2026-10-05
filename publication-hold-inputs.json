@@ -5,7 +5,7 @@
     "Makefile": "b45013c9f49a46d8674279c9c510b21662c30f7d442842143c296ce08a067cc6",
     "STATE_VERSION": "d915cc95d6ca8f47ae297713ed46d4e5c5d99ddd29fc3c61e263bdf305f2b5b0",
     "coverage.yaml": "46e92d181b10dbc8076fb31dd5210997540454ab8b0e765c57369b9c5f8bf178",
-    "docs/getting-started/first-machine.md": "f96a95a352c204a784ba19034d56d06cd404c01f2729c2a9eda9c4b2bbbb89a7",
+    "docs/getting-started/first-machine.md": "df29f7df8121b6c9b4941c6df0ff9f0987f39e3b2dd20409b4625b53ff84f9e4",
     "docs/guides/cel-and-actions.md": "7654f0c27df8249db989beacf743ebe36a0c1607d2b70645102826082904c142",
     "docs/guides/components-and-spawning.md": "79b87ca19394875c9d72d58bbde72b5fe209254370cd48e3ed1d4efd5953dae2",
     "docs/guides/core-statecharts.md": "df6b59ee07fc238fd6c95e495cdf4b7e6930fa89eadd56627b492b505cfa445c",
@@ -25,6 +25,6 @@
     "scripts/source_lock.py": "f546284e8701dadd01ae053be30ffc13e08bdfcfc15edf9b98c4fc41ce93cfb0",
     "scripts/validate.py": "e9a7b65c815c68f9c058beb22e0d93c067e5d7538ac6f66cbcccf65ccb07a75f",
     "sources.lock.yaml": "07fe5573f9595dcc50ab97202735df79d16d773f0142b17d1de38c11f9442e9a",
-    "tests/test_publication_hold.py": "82359df69fd7f2c6d59bb4a851f1d9a28165d1ea488bbdae4a7986053574e668"
+    "tests/test_publication_hold.py": "438dea3a3fd0bb971683a683c64555e58cca267f533e1032f7af7cd1111c466e"
   }
 }
