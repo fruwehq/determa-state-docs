@@ -31,8 +31,19 @@ These counts establish those checkpoints' scope, not completion of the remaining
 optional host implementations.
 
 Draft Python PR111 and Rust PR65 continue timer and authority/effect integration.
-Their evolving checkpoint SHAs, scoped reviews and local checks are recorded in
-their PR bodies and the scope audit. Scoped review does not approve a full profile.
+Python timer checkpoint `5d284e83bc1f120a5d427198ce1af9c052542f83` passed scoped
+independent review, 552 unit tests and six dedicated tests against actual PostgreSQL.
+It includes spawned-process SIGKILL before and after coordinated commit and immutable
+storage-bound original-request/result/artifact evidence. Verified installation,
+proved-fate reclaim and the full operational profile are unfinished.
+Rust authority checkpoint `ad21fc0404d14dd3b6738d6cb91d217fb49583fc` passed scoped
+independent review, 11 authority integration tests, a deterministic concurrent-writer
+snapshot regression and Rust1.86 library/test Clippy. Guarded checkpoint loads and
+conflict-return bytes share the same validated native snapshot; immutable allocation
+binds original owner bytes/digest. Complete frozen inventories, worker fences, fate,
+relocation and committed native effects remain unfinished. Newer crash tests are
+being validated; evolving checkpoint SHAs are recorded in PR bodies and the scope
+audit. Scoped review does not approve a full profile.
 Only ordinary pushes are permitted; verify each remote head. Earlier force pushes
 remain an acknowledged process violation.
 
@@ -79,8 +90,7 @@ Workflow YAML is evidence of requested behavior, not evidence that GitHub's live
 Environment protections or registry Trusted Publisher configuration exist. The
 Rust [draft PR67](https://github.com/fruwehq/determa-state-rust/pull/67) proposes a
 `crates-io` Environment declaration; it is unmerged and live protection remains unproved.
-The
-connector rejects Environment endpoints and the prepared Cloud proxy blocks
+The connector rejects Environment endpoints and the prepared Cloud proxy blocks
 `api.github.com`; do not bypass that boundary or substitute workflow comments for
 live settings. Required evidence includes exact repository/environment, required
 reviewers, prevention of self-review where applicable, permitted deployment
