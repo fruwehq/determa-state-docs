@@ -750,181 +750,107 @@ database concern rather than a Rust engine result.
 <!-- determa-example: persistence-tutorial/rust/Cargo.toml -->
 ```toml
 [package]
-name = "determa-persistence-migration-tutorial"
-version = "0.2.0"
+name = "determa-persistence-tutorial"
+version = "0.3.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = "=0.2.0"
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust.git", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
 serde_json = "1"
+serde_json_canonicalizer = "0.3"
+sha2 = "0.10"
 ```
 
 <!-- determa-example: persistence-tutorial/rust/src/main.rs -->
 ```rust
-use determa_state::{
-    create, dispatch, encode_aggregate, load_bundle, migrate_aggregate, migrate_and_dispatch,
-    restore_aggregate, Bindings, Delivery, Envelope, InMemoryDefinitionResolver, MigrationRequest,
-    ResourceLimits, RuntimeStatus, Target, Value,
-};
-use serde_json::Value as JsonValue;
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    env, fs,
-    path::PathBuf,
-};
+use determa_state::{admit, create, load_bundle, restore_aggregate, step,
+    migrate_aggregate_route, AdmissionDelivery, Aggregate, Bindings, Bundle,
+    InMemoryDefinitionResolver, MigrationRequest, QueueEnvelope, ResourceLimits, TypedValue};
+use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
+use std::{env, fs, path::PathBuf};
 
-fn delivery(
-    state: &determa_state::AggregateState,
-    event: &str,
-    event_id: &str,
-    payload: BTreeMap<String, Value>,
-) -> Delivery {
-    Delivery::Input(Envelope {
-        event: event.to_string(),
-        event_id: event_id.to_string(),
-        target: Target::Root {
-            root_instance_id: state.root_instance_id.clone(),
-            root_runtime_id: state.root.runtime_id.clone(),
-        },
-        payload,
-        correlation_id: None,
-    })
+fn root(state: &Aggregate) -> &Value {
+    state.value()["runtimes"].as_array().unwrap().iter()
+        .find(|runtime| runtime["runtime_id"] == state.value()["root_runtime_id"]).unwrap()
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let root = PathBuf::from(env::args().nth(1).expect("project path"));
-    let source = load_bundle(&fs::read_to_string(root.join("order-v1.yaml"))?)?;
-    let target = load_bundle(&fs::read_to_string(root.join("order-v2.yaml"))?)?;
-    let good_bytes = fs::read(root.join("migration-good.json"))?;
-    let bad_bytes = fs::read(root.join("migration-missing-state.json"))?;
-    let good: JsonValue = serde_json::from_slice(&good_bytes)?;
-    let bad: JsonValue = serde_json::from_slice(&bad_bytes)?;
-    let good_digest = good["migration_descriptor_digest"]
-        .as_str()
-        .unwrap()
-        .to_string();
-    let bad_digest = bad["migration_descriptor_digest"]
-        .as_str()
-        .unwrap()
-        .to_string();
+fn typed(value: &Value) -> TypedValue {
+    match value {
+        Value::Null => TypedValue::Null,
+        Value::Bool(value) => TypedValue::Boolean(*value),
+        Value::String(value) => TypedValue::String(value.clone()),
+        Value::Number(value) => if value.is_i64() { TypedValue::Integer(value.as_i64().unwrap()) } else { TypedValue::Float(value.as_f64().unwrap()) },
+        Value::Array(values) => TypedValue::List(values.iter().map(typed).collect()),
+        Value::Object(values) => TypedValue::Map(values.iter().map(|(name, value)| (name.clone(), typed(value))).collect()),
+    }
+}
 
+fn input(state: &Aggregate, event: &str, event_id: &str, payload: Value, correlation: Option<&str>) -> QueueEnvelope {
+    QueueEnvelope { event: event.into(), event_id: event_id.into(), cause_id: event_id.into(),
+        source: json!({"host": true}), target: root(state)["target_identity"].clone(), payload: typed(&payload),
+        correlation_id: correlation.map(str::to_owned) }
+}
+
+fn process(bundle: &Bundle, state: &Aggregate, envelope: QueueEnvelope, resolver: &InMemoryDefinitionResolver) -> Result<(Aggregate, Value), determa_state::ArtifactError> {
+    let bytes = serde_json_canonicalizer::to_vec(&json!([
+        "determa-inbox-envelope-digest-1", "1", state.value()["root_instance_id"], "input", envelope,
+    ])).unwrap();
+    let accepted = admit(bundle, state, &[AdmissionDelivery { delivery_mode: "input".into(), envelope,
+        envelope_digest: format!("sha256:{:x}", Sha256::digest(bytes)) }])?;
+    let accepted = restore_aggregate(&serde_json_canonicalizer::to_vec(&accepted["state"]).unwrap(), resolver).unwrap();
+    let result = step(bundle, &accepted, accepted.value()["root_runtime_id"].as_str().unwrap())?;
+    Ok((restore_aggregate(&serde_json_canonicalizer::to_vec(&result["state"]).unwrap(), resolver).unwrap(), result))
+}
+
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let path = PathBuf::from(env::args().nth(1).expect("project path"));
+    let source = load_bundle(&fs::read_to_string(path.join("order-v1.yaml"))?)?;
+    let target = load_bundle(&fs::read_to_string(path.join("order-v2.yaml"))?)?;
     let mut resolver = InMemoryDefinitionResolver::default();
     resolver.insert(source.clone(), true);
     resolver.insert(target.clone(), true);
-    resolver.insert_descriptor(good_digest.clone(), good_bytes, true);
-    resolver.insert_descriptor(bad_digest.clone(), bad_bytes, true);
-
-    let initial = create(
-        &source,
-        "order",
-        "order-100",
-        "create:order-100",
-        &Bindings::default(),
-    )
-    .state
-    .unwrap();
-    let submitted = dispatch(
-        &source,
-        &initial,
-        Some(delivery(
-            &initial,
-            "submit",
-            "input-submit-1",
-            BTreeMap::from([(
-                "order_id".to_string(),
-                Value::String("order-100".to_string()),
-            )]),
-        )),
-    );
-    assert_eq!(submitted.emissions.len(), 1);
-    let submitted_state = submitted.state.unwrap();
-    let (_, encoded) = encode_aggregate(&source, &submitted_state)?;
-    let restored = restore_aggregate(&encoded, &resolver)?;
-    assert_eq!(
-        restored.root.active,
-        BTreeSet::from(["root".to_string(), "awaiting_fulfillment".to_string(),])
-    );
-
-    let broken = migrate_aggregate(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![bad_digest.clone()],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-    )
-    .expect_err("missing active-state mapping");
+    let mut digests = Vec::new();
+    for name in ["migration-missing-state.json", "migration-good.json"] {
+        let bytes = fs::read(path.join(name))?;
+        let descriptor: Value = serde_json::from_slice(&bytes)?;
+        let digest = descriptor["migration_descriptor_digest"].as_str().unwrap().to_owned();
+        resolver.insert_descriptor(digest.clone(), bytes, true);
+        digests.push(digest);
+    }
+    let initial = create(&source, "order", "order-100", "create:order-100", &Bindings::default())?;
+    let submit = input(&initial, "submit", "input-submit-1", json!({"order_id":"order-100"}), None);
+    let (submitted, result) = process(&source, &initial, submit, &resolver)?;
+    assert_eq!(result["emissions"].as_array().unwrap().len(), 1);
+    let bytes = serde_json_canonicalizer::to_vec(submitted.value())?;
+    let restored = restore_aggregate(&bytes, &resolver)?;
+    assert_eq!(root(&restored)["active_leaf_state_definition_pointers"],
+               json!(["/machines/0/root/states/awaiting_fulfillment"]));
+    let request = |digest: &str| MigrationRequest {
+        migration_route: vec![digest.to_owned()],
+        target_validated_bundle_fingerprint: target.fingerprint.clone(), maintenance_mode: false,
+    };
+    let broken = migrate_aggregate_route(&restored, &request(&digests[0]), &resolver, &ResourceLimits::default())
+        .expect_err("missing active-state mapping");
     assert_eq!(broken.code.as_str(), "migration_totality_failure");
-    let broken_retry = migrate_aggregate(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![bad_digest],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-    )
-    .expect_err("the same incomplete route fails again");
-    assert_eq!(broken_retry, broken);
-
-    let preview = migrate_aggregate(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![good_digest.clone()],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-    )?;
-    assert_eq!(preview.aggregate.root.runtime_id, restored.root.runtime_id);
-    assert_eq!(
-        preview.aggregate.next_logical_step_sequence,
-        restored.next_logical_step_sequence
-    );
-    assert_eq!(
-        preview.aggregate.next_output_sequence,
-        restored.next_output_sequence
-    );
-
-    let completed = migrate_and_dispatch(
-        &encoded,
-        &MigrationRequest {
-            migration_route: vec![good_digest],
-            target_validated_bundle_fingerprint: target.fingerprint.clone(),
-            maintenance_mode: false,
-        },
-        &resolver,
-        &ResourceLimits::default(),
-        Some(delivery(
-            &restored,
-            "complete",
-            "input-complete-1",
-            BTreeMap::new(),
-        )),
-    )?;
-    assert_eq!(
-        completed.migration.aggregate_envelope.root_machine_version,
-        "2"
-    );
-    assert_eq!(
-        completed.migration.aggregate_envelope.migration_sequence,
-        "1"
-    );
-    assert_eq!(completed.migration.audit_records.len(), 1);
-    assert_eq!(
-        completed.migration.aggregate.root.status,
-        RuntimeStatus::Completed
-    );
-
-    println!(
-        "restored=v1; duplicate=ignored; outbox=1; \
-         pure_failure=migration_totality_failure; migrated=v2; status=completed"
-    );
+    let retry = migrate_aggregate_route(&restored, &request(&digests[0]), &resolver, &ResourceLimits::default())
+        .expect_err("same incomplete route");
+    assert_eq!(retry, broken);
+    assert_eq!(serde_json_canonicalizer::to_vec(restored.value())?, bytes);
+    let migration = migrate_aggregate_route(&restored, &request(&digests[1]), &resolver, &ResourceLimits::default())?;
+    let migrated = restore_aggregate(&serde_json_canonicalizer::to_vec(&migration["aggregate_state"])?, &resolver)?;
+    for field in ["root_runtime_id", "next_logical_step_sequence", "next_output_sequence"] {
+        assert_eq!(migrated.value()[field], restored.value()[field]);
+    }
+    assert_eq!(migration["audit_records"].as_array().unwrap().len(), 1);
+    let complete = input(&migrated, "complete", "input-complete-1", json!({}), None);
+    let (completed, result) = process(&target, &migrated, complete, &resolver)?;
+    assert_eq!(completed.value()["root_machine_version"], "2");
+    assert_eq!(completed.value()["migration_sequence"], "1");
+    assert_eq!(result["status"], "completed");
+    println!("restored=v1; outbox=1; pure_failure=migration_totality_failure; migrated=v2; status=completed");
     Ok(())
 }
 ```
@@ -944,7 +870,7 @@ restored=v1; duplicate=ignored; outbox=1; quarantined=migration_totality_failure
 The Rust engine trace prints:
 
 ```text
-restored=v1; duplicate=ignored; outbox=1; pure_failure=migration_totality_failure; migrated=v2; status=completed
+restored=v1; outbox=1; pure_failure=migration_totality_failure; migrated=v2; status=completed
 ```
 
 ## 8. Inspect and recover safely

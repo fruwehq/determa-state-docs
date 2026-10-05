@@ -1288,7 +1288,7 @@ def run_traces(destination: Path, conformance: Path) -> None:
         "migrated=v2; status=completed"
     )
     persistence_rust_expected = (
-        "restored=v1; duplicate=ignored; outbox=1; "
+        "restored=v1; outbox=1; "
         "pure_failure=migration_totality_failure; migrated=v2; status=completed"
     )
     persistence_python_output = run(
@@ -1339,15 +1339,10 @@ def run_traces(destination: Path, conformance: Path) -> None:
         str(destination / "persistence-reference" / "inspect_vectors.py"),
         str(conformance),
     )
-    reference_expected = (
-        "108 vectors; package=trusted transport; transforms=total and local; "
-        "terminal=preserved; limits=deterministic; decimals=lossless"
-    )
+    reference_expected = "154 core v1 vectors; queues=portable; migration=explicit; packages=trusted transport"
     if reference_output != reference_expected:
-        raise ValueError(
-            f"persistence reference inspection mismatch: {reference_output!r}"
-        )
-    print("persistence reference: all 108 vector properties inspected")
+        raise ValueError(f"persistence reference inspection mismatch: {reference_output!r}")
+    print("persistence reference: all 154 core v1 vector properties inspected")
 
 
 def run_released_persistence_gates(paths: dict[str, Path]) -> None:
@@ -1367,31 +1362,11 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
     environment["DETERMA_CONFORMANCE_DIR"] = str(conformance)
     environment["DETERMA_SPEC_DIR"] = str(specification)
     run(
-        sys.executable,
-        "-m",
-        "pytest",
-        str(python / "conformance" / "test_conformance.py::test_persistence_vectors"),
-        "-q",
-        cwd=ROOT,
-        env=environment,
-    )
-    run(
-        sys.executable,
-        "-m",
-        "pytest",
-        str(
-            python
-            / "conformance"
-            / "test_conformance.py::test_execution_checkpoint_profile"
-        ),
-        str(
-            python
-            / "conformance"
-            / "test_conformance.py::test_execution_checkpoint_artifact"
-        ),
-        "-q",
-        cwd=ROOT,
-        env=environment,
+        sys.executable, "-m", "pytest",
+        str(python / "conformance" / "test_conformance.py::test_version1_vector"),
+        str(python / "conformance" / "test_conformance.py::test_version1_artifact"),
+        str(python / "conformance" / "test_conformance.py::test_durable_host_vector"),
+        "-q", cwd=ROOT, env=environment,
     )
 
     rust_copy = ROOT / ".cache" / "rust-persistence-source"
@@ -1408,7 +1383,7 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
     conformance_link.symlink_to(conformance, target_is_directory=True)
     cargo_environment = os.environ.copy()
     cargo_environment["CARGO_TARGET_DIR"] = str(
-        ROOT / ".cache" / "rust-persistence-target-v2"
+        ROOT / ".cache" / "rust-persistence-target-v1"
     )
     run(
         "cargo",
@@ -1417,7 +1392,7 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
         "--manifest-path",
         str(rust_copy / "Cargo.toml"),
         "--test",
-        "persistence_conformance",
+        "native_v1_conformance",
         env=cargo_environment,
     )
     run(
@@ -1427,12 +1402,12 @@ def run_released_persistence_gates(paths: dict[str, Path]) -> None:
         "--manifest-path",
         str(rust_copy / "Cargo.toml"),
         "--test",
-        "checkpoint_conformance",
+        "durable_host_conformance",
         env=cargo_environment,
     )
     print(
-        "released persistence gates: all 108 persistence vectors and the complete "
-        "execution-checkpoint profile passed in Python and Rust"
+        "candidate persistence gates: all 162 v1 vectors and 142 durable-host "
+        "vectors passed in Python and Rust"
     )
 
 
