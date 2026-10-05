@@ -1325,8 +1325,8 @@ def run_traces(destination: Path, conformance: Path) -> None:
         str(checkpoint_root / "state.db"),
     )
     checkpoint_expected = (
-        "revision=2; count=4; receipts=2; "
-        "pending=0; outbox=1; replay=committed"
+        "revision=2; count=4; receipts=3; "
+        "pending=0; outbox=1; replay=retained"
     )
     if checkpoint_output != checkpoint_expected:
         raise ValueError(
