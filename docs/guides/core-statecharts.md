@@ -887,6 +887,7 @@ sha2 = "0.10"
 use determa_state::{admit, create, load_bundle, restore_aggregate, step,
     AdmissionDelivery, Aggregate, Bindings, Bundle, InMemoryDefinitionResolver,
     QueueEnvelope, TypedValue};
+use determa_state::Value as NativeValue;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::{collections::BTreeMap, env, fs, path::Path};
