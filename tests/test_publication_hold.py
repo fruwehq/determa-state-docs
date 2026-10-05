@@ -75,10 +75,16 @@ def test_pages_hold_covers_every_workflow_trigger(tmp_path):
     "split_gh_api_argv",
     "imported_dependency_change",
     "runnable_markdown_change",
+    "publication_manifest_change",
+    "package_inventory_change",
 ])
 def test_publication_hold_rejects_other_paths(tmp_path, attack):
     workflow = hold_fixture(tmp_path)
-    if attack == "second_workflow":
+    if attack == "publication_manifest_change":
+        (tmp_path / "PUBLICATION_MANIFEST.md").write_text("Publication approved\n")
+    elif attack == "package_inventory_change":
+        (tmp_path / "audit/packages/python-native-interim.json").write_text("{}\n")
+    elif attack == "second_workflow":
         (workflow.parent / "deploy.yml").write_text("jobs: {}\n")
     elif attack == "local_action":
         action = tmp_path / ".github/actions/deploy/action.yml"

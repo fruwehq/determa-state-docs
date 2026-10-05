@@ -1,0 +1,416 @@
+{
+  "reviewed_head": "dadd601ab0587c4b0693a62749b145a7910fcf65",
+  "merged_head": "3edad6322011accf81ece6a30134fa183548aceb",
+  "package": "determa-state-0.3.0.crate",
+  "sha256": "ba6072f78cb870e3698a9423c28bdec383c4b4e9005e401ff244122edd2d7621",
+  "contents": [
+    {
+      "path": "determa-state-0.3.0/.cargo_vcs_info.json",
+      "bytes": 94
+    },
+    {
+      "path": "determa-state-0.3.0/.gitignore",
+      "bytes": 918
+    },
+    {
+      "path": "determa-state-0.3.0/.gitmodules",
+      "bytes": 122
+    },
+    {
+      "path": "determa-state-0.3.0/AGENTS.md",
+      "bytes": 5231
+    },
+    {
+      "path": "determa-state-0.3.0/Cargo.lock",
+      "bytes": 44888
+    },
+    {
+      "path": "determa-state-0.3.0/Cargo.toml",
+      "bytes": 3072
+    },
+    {
+      "path": "determa-state-0.3.0/Cargo.toml.orig",
+      "bytes": 2215
+    },
+    {
+      "path": "determa-state-0.3.0/LICENSE",
+      "bytes": 1080
+    },
+    {
+      "path": "determa-state-0.3.0/README.md",
+      "bytes": 14772
+    },
+    {
+      "path": "determa-state-0.3.0/build.rs",
+      "bytes": 1571
+    },
+    {
+      "path": "determa-state-0.3.0/examples/full.yaml",
+      "bytes": 6291
+    },
+    {
+      "path": "determa-state-0.3.0/examples/minimal.yaml",
+      "bytes": 577
+    },
+    {
+      "path": "determa-state-0.3.0/schema/aggregate-state-package-v1.schema.json",
+      "bytes": 1734
+    },
+    {
+      "path": "determa-state-0.3.0/schema/aggregate-state-v1.schema.json",
+      "bytes": 22822
+    },
+    {
+      "path": "determa-state-0.3.0/schema/application-projection-v1.schema.json",
+      "bytes": 15704
+    },
+    {
+      "path": "determa-state-0.3.0/schema/archive-export-request-v1.schema.json",
+      "bytes": 1310
+    },
+    {
+      "path": "determa-state-0.3.0/schema/archive-import-request-v1.schema.json",
+      "bytes": 1449
+    },
+    {
+      "path": "determa-state-0.3.0/schema/archive-participant-v1.schema.json",
+      "bytes": 2219
+    },
+    {
+      "path": "determa-state-0.3.0/schema/archive-result-v1.schema.json",
+      "bytes": 8575
+    },
+    {
+      "path": "determa-state-0.3.0/schema/archive-v1.schema.json",
+      "bytes": 11886
+    },
+    {
+      "path": "determa-state-0.3.0/schema/compilation-manifest-v1.schema.json",
+      "bytes": 1210
+    },
+    {
+      "path": "determa-state-0.3.0/schema/core-step-result-v1.schema.json",
+      "bytes": 6040
+    },
+    {
+      "path": "determa-state-0.3.0/schema/delivery-v1.schema.json",
+      "bytes": 23828
+    },
+    {
+      "path": "determa-state-0.3.0/schema/durable-host-call-log-v1.schema.json",
+      "bytes": 1080
+    },
+    {
+      "path": "determa-state-0.3.0/schema/durable-host-inputs-v1.schema.json",
+      "bytes": 18038
+    },
+    {
+      "path": "determa-state-0.3.0/schema/durable-host-responses-v1.schema.json",
+      "bytes": 14400
+    },
+    {
+      "path": "determa-state-0.3.0/schema/durable-host-results-v1.schema.json",
+      "bytes": 1671
+    },
+    {
+      "path": "determa-state-0.3.0/schema/durable-host-store-v1.schema.json",
+      "bytes": 1620
+    },
+    {
+      "path": "determa-state-0.3.0/schema/effect-cancellation-request-v1.schema.json",
+      "bytes": 702
+    },
+    {
+      "path": "determa-state-0.3.0/schema/effect-cancellation-response-v1.schema.json",
+      "bytes": 4396
+    },
+    {
+      "path": "determa-state-0.3.0/schema/effect-result-request-v1.schema.json",
+      "bytes": 1155
+    },
+    {
+      "path": "determa-state-0.3.0/schema/effect-result-response-v1.schema.json",
+      "bytes": 4291
+    },
+    {
+      "path": "determa-state-0.3.0/schema/execution-checkpoint-v1.schema.json",
+      "bytes": 27494
+    },
+    {
+      "path": "determa-state-0.3.0/schema/extension-capability-report-v1.schema.json",
+      "bytes": 7665
+    },
+    {
+      "path": "determa-state-0.3.0/schema/extension-capability-requirement-v1.schema.json",
+      "bytes": 6317
+    },
+    {
+      "path": "determa-state-0.3.0/schema/extension-descriptor-v1.schema.json",
+      "bytes": 7681
+    },
+    {
+      "path": "determa-state-0.3.0/schema/host-authority-operation-v1.schema.json",
+      "bytes": 13883
+    },
+    {
+      "path": "determa-state-0.3.0/schema/host-authority-profile-report-v1.schema.json",
+      "bytes": 5311
+    },
+    {
+      "path": "determa-state-0.3.0/schema/host-effect-journal-v1.schema.json",
+      "bytes": 9436
+    },
+    {
+      "path": "determa-state-0.3.0/schema/inspection-v1.schema.json",
+      "bytes": 12929
+    },
+    {
+      "path": "determa-state-0.3.0/schema/language-source-v1.schema.json",
+      "bytes": 1573
+    },
+    {
+      "path": "determa-state-0.3.0/schema/lossless-delivery-v1.schema.json",
+      "bytes": 8592
+    },
+    {
+      "path": "determa-state-0.3.0/schema/machine.schema.json",
+      "bytes": 34570
+    },
+    {
+      "path": "determa-state-0.3.0/schema/migration-descriptor-v1.schema.json",
+      "bytes": 16739
+    },
+    {
+      "path": "determa-state-0.3.0/schema/provider-reference-v1.schema.json",
+      "bytes": 810
+    },
+    {
+      "path": "determa-state-0.3.0/schema/public-host-request-v1.schema.json",
+      "bytes": 16398
+    },
+    {
+      "path": "determa-state-0.3.0/schema/public-host-response-v1.schema.json",
+      "bytes": 107760
+    },
+    {
+      "path": "determa-state-0.3.0/schema/recovery-operation-v1.schema.json",
+      "bytes": 37830
+    },
+    {
+      "path": "determa-state-0.3.0/schema/recovery-record-v1.schema.json",
+      "bytes": 6751
+    },
+    {
+      "path": "determa-state-0.3.0/schema/runtime-action-output-v1.schema.json",
+      "bytes": 3167
+    },
+    {
+      "path": "determa-state-0.3.0/schema/runtime-provider-descriptor-v1.schema.json",
+      "bytes": 813
+    },
+    {
+      "path": "determa-state-0.3.0/schema/timer-helper-operation-v1.schema.json",
+      "bytes": 14303
+    },
+    {
+      "path": "determa-state-0.3.0/schema/version1-operation-failures.schema.json",
+      "bytes": 1005
+    },
+    {
+      "path": "determa-state-0.3.0/schema/version1-operation-inputs.schema.json",
+      "bytes": 10274
+    },
+    {
+      "path": "determa-state-0.3.0/schema/version1-operation-result.schema.json",
+      "bytes": 9818
+    },
+    {
+      "path": "determa-state-0.3.0/scripts/native-gates.json",
+      "bytes": 5526
+    },
+    {
+      "path": "determa-state-0.3.0/scripts/native_gate_report.py",
+      "bytes": 4432
+    },
+    {
+      "path": "determa-state-0.3.0/scripts/test_native_gate_report.py",
+      "bytes": 1616
+    },
+    {
+      "path": "determa-state-0.3.0/scripts/test_release_metadata.py",
+      "bytes": 2683
+    },
+    {
+      "path": "determa-state-0.3.0/scripts/verify_msrv.py",
+      "bytes": 1622
+    },
+    {
+      "path": "determa-state-0.3.0/scripts/verify_release_tag.py",
+      "bytes": 1193
+    },
+    {
+      "path": "determa-state-0.3.0/src/bin/determa_state.rs",
+      "bytes": 133
+    },
+    {
+      "path": "determa-state-0.3.0/src/bin/determa_state_rust.rs",
+      "bytes": 133
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/adapter_policy.rs",
+      "bytes": 8266
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/adapters/file.rs",
+      "bytes": 8350
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/adapters/memory.rs",
+      "bytes": 3371
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/adapters/mod.rs",
+      "bytes": 460
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/adapters/postgresql.rs",
+      "bytes": 24130
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/adapters/sqlite.rs",
+      "bytes": 31281
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/host.rs",
+      "bytes": 98873
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/mod.rs",
+      "bytes": 2565
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/store.rs",
+      "bytes": 34758
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/types.rs",
+      "bytes": 7962
+    },
+    {
+      "path": "determa-state-0.3.0/src/checkpoint/v1.rs",
+      "bytes": 110484
+    },
+    {
+      "path": "determa-state-0.3.0/src/cli.rs",
+      "bytes": 1414
+    },
+    {
+      "path": "determa-state-0.3.0/src/extensions.rs",
+      "bytes": 50679
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/cel.rs",
+      "bytes": 35974
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/compile.rs",
+      "bytes": 77357
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/contracts.rs",
+      "bytes": 10614
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/counter.rs",
+      "bytes": 2641
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/inspection.rs",
+      "bytes": 19261
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/inspection_cel.rs",
+      "bytes": 28678
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/migration.rs",
+      "bytes": 60917
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/mod.rs",
+      "bytes": 1867
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/model.rs",
+      "bytes": 9620
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/native.rs",
+      "bytes": 74957
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/package.rs",
+      "bytes": 6819
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/persistence.rs",
+      "bytes": 2859
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/providers/common.rs",
+      "bytes": 6672
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/providers/compilation.rs",
+      "bytes": 10329
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/providers.rs",
+      "bytes": 22574
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/runtime.rs",
+      "bytes": 183131
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/source.rs",
+      "bytes": 22072
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/strict_json.rs",
+      "bytes": 6682
+    },
+    {
+      "path": "determa-state-0.3.0/src/format1/v1.rs",
+      "bytes": 88628
+    },
+    {
+      "path": "determa-state-0.3.0/src/lib.rs",
+      "bytes": 1893
+    },
+    {
+      "path": "determa-state-0.3.0/src/public_host/local.rs",
+      "bytes": 26638
+    },
+    {
+      "path": "determa-state-0.3.0/src/public_host.rs",
+      "bytes": 25898
+    },
+    {
+      "path": "determa-state-0.3.0/src/value.rs",
+      "bytes": 8659
+    },
+    {
+      "path": "determa-state-0.3.0/tests/adapter_selection.rs",
+      "bytes": 19841
+    },
+    {
+      "path": "determa-state-0.3.0/tests/native_worker_composition.rs",
+      "bytes": 15646
+    },
+    {
+      "path": "determa-state-0.3.0/tests/public_api.rs",
+      "bytes": 10235
+    }
+  ]
+}

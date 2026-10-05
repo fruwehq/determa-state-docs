@@ -3,7 +3,10 @@
   "inputs": {
     ".github/workflows/docs.yml": "98feb6fb55f8f94a373b867e1d8df881ae76a7ecc85bd719e374f85f3666be39",
     "Makefile": "b45013c9f49a46d8674279c9c510b21662c30f7d442842143c296ce08a067cc6",
+    "PUBLICATION_MANIFEST.md": "0834874a1a11390e55cedcadda51751516d6cea4bad39b53747420db40c823a7",
     "STATE_VERSION": "d915cc95d6ca8f47ae297713ed46d4e5c5d99ddd29fc3c61e263bdf305f2b5b0",
+    "audit/packages/python-native-interim.json": "b5a263ce51f26cf15c3dcb2bc09acea9de3794b14a00fc3a9f4fb904ab8cf129",
+    "audit/packages/rust-native-interim.json": "f920c990b2ea3fbc8f79eaa45cefe986b60eb3c67aa8b1059a518ad1fd9d9f65",
     "coverage.yaml": "a178158574a9c1b905475ad177aea6183fb211a80d8625c3f2e2143897432bab",
     "docs/getting-started/first-machine.md": "284d101d28a235693039a9bc9ec1bfe9d853d9397a0cd7f025bc802a0a418c73",
     "docs/guides/cel-and-actions.md": "120992ac43c9dd4d521076bb4ea2917bb79b68d53daf647e38bd3a3858d4293b",
@@ -24,10 +27,10 @@
     "scripts/check_publication_hold.py": "a1a3e558d0645c62e92e4dff16fb20bfc1126fc5b0edc560ccba9f656d398b1c",
     "scripts/fetch_sources.py": "6121fcbcac44c2866b0a2fffbfaf88cd97c8e9acf99aece602afd7ee68c2298e",
     "scripts/install_candidate.py": "b065a9b6ac2db841d84230c8b217647384019f4b96cdb790c095345ba050db6a",
-    "scripts/publication_hold_bootstrap.py": "5b294b526f474b94a07e424d725210988ca6cbbfcc59a6e7a2b27fb6ef3af1c4",
+    "scripts/publication_hold_bootstrap.py": "cace2dd6d3f9a1f2c1e6a57bd921e338598da50f4b6d2f6dc100c2010f04e2e2",
     "scripts/source_lock.py": "f546284e8701dadd01ae053be30ffc13e08bdfcfc15edf9b98c4fc41ce93cfb0",
     "scripts/validate.py": "37a061f5714db590d98a17781604aa64bcef6dfad63666e5547a05798937fb39",
     "sources.lock.yaml": "153650e624f737cd46417b478e8a737c7038e6086d2264a1ff966632da5f244b",
-    "tests/test_publication_hold.py": "438dea3a3fd0bb971683a683c64555e58cca267f533e1032f7af7cd1111c466e"
+    "tests/test_publication_hold.py": "feee38212c5416827b176e17f05a4175973ecfd80193d8ccacb54b78fe9d91c4"
   }
 }
