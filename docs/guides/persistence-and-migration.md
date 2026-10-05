@@ -15,7 +15,7 @@ mkdir determa-persistence-tutorial
 cd determa-persistence-tutorial
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@61fd77ed2e73365e80739d6d99c50c54fc6f0da6"
 mkdir -p rust/src
 ```
 
@@ -755,7 +755,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "272e37e7255ae4c650f714a94ea6cddea61d245d" }
 serde_json = "1"
 serde_json_canonicalizer = "0.3"
 sha2 = "0.10"

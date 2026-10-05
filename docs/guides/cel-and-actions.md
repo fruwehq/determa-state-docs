@@ -608,7 +608,7 @@ fault and queue disposition explicitly.
 Install the pinned engine:
 
 ```sh
-python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@61fd77ed2e73365e80739d6d99c50c54fc6f0da6"
 ```
 
 <!-- determa-example: python/cel_actions.py -->
@@ -918,7 +918,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "272e37e7255ae4c650f714a94ea6cddea61d245d" }
 serde_json = "1"
 serde_json_canonicalizer = "0.3"
 sha2 = "0.10"
@@ -1133,18 +1133,18 @@ language traces. The code above is the tested source, not pseudocode.
 This chapter covers the format-1 structured-action and CEL rules linked below. The
 matching pinned Determa State 0.3.0 conformance cases are:
 
-- [12 guarded list](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/12-guarded-list)
-- [17 action fault](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/17-action-fault)
-- [61 expression map order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/61-expression-map-order)
-- [64 dynamic target expression order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/64-dynamic-target-expression-order)
-- [65 portable CEL profile](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/65-portable-cel-profile)
-- [66 CEL profile rejections](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/66-cel-profile-rejections)
-- [68 CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/68-cel-and-nonabsorbed-error)
-- [69 CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/69-cel-or-nonabsorbed-error)
-- [70 dynamic target list order](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/70-dynamic-target-list-order)
-- [71 reversed CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/71-cel-reversed-and-nonabsorbed-error)
-- [72 reversed CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/72-cel-reversed-or-nonabsorbed-error)
-- [79 missing refresh field](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/79-missing-refresh-field)
+- [12 guarded list](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/12-guarded-list)
+- [17 action fault](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/17-action-fault)
+- [61 expression map order](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/61-expression-map-order)
+- [64 dynamic target expression order](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/64-dynamic-target-expression-order)
+- [65 portable CEL profile](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/65-portable-cel-profile)
+- [66 CEL profile rejections](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/66-cel-profile-rejections)
+- [68 CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/68-cel-and-nonabsorbed-error)
+- [69 CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/69-cel-or-nonabsorbed-error)
+- [70 dynamic target list order](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/70-dynamic-target-list-order)
+- [71 reversed CEL AND non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/71-cel-reversed-and-nonabsorbed-error)
+- [72 reversed CEL OR non-absorbed error](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/72-cel-reversed-or-nonabsorbed-error)
+- [79 missing refresh field](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/79-missing-refresh-field)
 
 Normative references:
 [structured actions §4.8](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#48-structured-actions),

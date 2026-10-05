@@ -380,7 +380,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "272e37e7255ae4c650f714a94ea6cddea61d245d" }
 serde_json = "1"
 serde_json_canonicalizer = "0.3"
 sha2 = "0.10"
@@ -629,19 +629,19 @@ The exact pinned specification sections explained here are:
 
 Pinned candidate conformance examples:
 
-- [16 timer extension](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/16-timer-extension)
-- [18 domain failure](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/18-domain-failure)
-- [19 public event contract](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/19-public-event-contract)
-- [20 invalid public correlation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/20-invalid-public-correlation)
-- [46 root boundary validation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/46-root-boundary-validation)
-- [50 root fault terminal aggregate](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/50-root-fault-terminal-aggregate)
-- [67 bundle/state binding](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/67-bundle-state-binding)
-- [75 root initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/75-root-initialization-fault)
-- [76 invalid creation Unicode](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/76-invalid-create-unicode)
-- [77 invalid dispatch Unicode](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/77-invalid-dispatch-unicode)
-- [85 initialization emission rollback](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/85-initialization-emission-rollback)
-- [88 reserved payload validation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/88-reserved-payload-validation)
-- [89 non-finite creation binding](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/89-nonfinite-creation-binding)
-- [90 host numeric normalization](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/90-host-numeric-normalization)
-- [92 faulted-root/component precedence](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/92-faulted-root-component-precedence)
-- [93 optional correlation](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/93-optional-correlation)
+- [16 timer extension](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/16-timer-extension)
+- [18 domain failure](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/18-domain-failure)
+- [19 public event contract](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/19-public-event-contract)
+- [20 invalid public correlation](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/20-invalid-public-correlation)
+- [46 root boundary validation](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/46-root-boundary-validation)
+- [50 root fault terminal aggregate](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/50-root-fault-terminal-aggregate)
+- [67 bundle/state binding](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/67-bundle-state-binding)
+- [75 root initialization fault](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/75-root-initialization-fault)
+- [76 invalid creation Unicode](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/76-invalid-create-unicode)
+- [77 invalid dispatch Unicode](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/77-invalid-dispatch-unicode)
+- [85 initialization emission rollback](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/85-initialization-emission-rollback)
+- [88 reserved payload validation](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/88-reserved-payload-validation)
+- [89 non-finite creation binding](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/89-nonfinite-creation-binding)
+- [90 host numeric normalization](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/90-host-numeric-normalization)
+- [92 faulted-root/component precedence](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/92-faulted-root-component-precedence)
+- [93 optional correlation](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/93-optional-correlation)

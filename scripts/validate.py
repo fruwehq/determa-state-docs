@@ -1297,6 +1297,12 @@ def run_traces(destination: Path, conformance: Path) -> None:
         )
     print("traces: Python host and Rust engine persistence paths passed")
 
+    public_root = destination / "public-host-tutorial"
+    public_output = run(sys.executable, str(public_root / "app.py"), str(public_root))
+    if public_output != "public create=committed; restart=retained; retry=original-binding":
+        raise ValueError(f"public host tutorial mismatch: {public_output!r}")
+    print("public host tutorial: committed response, restart, pinned retry passed")
+
     checkpoint_root = destination / "checkpoint-tutorial"
     checkpoint_output = run(
         sys.executable,

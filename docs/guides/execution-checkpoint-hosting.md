@@ -25,7 +25,7 @@ mkdir determa-checkpoint-tutorial
 cd determa-checkpoint-tutorial
 python -m venv .venv
 . .venv/bin/activate
-python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@e7406f35735832fc46ecbc2f668b178dbb6d65fd"
+python -m pip install "git+https://github.com/fruwehq/determa-state-python.git@61fd77ed2e73365e80739d6d99c50c54fc6f0da6"
 ```
 
 The command selects the exact public candidate commit. There is no published 0.3.0
@@ -331,10 +331,10 @@ declared event; the core itself never advances a clock.
 
 These current checkpoint cases cover native lifecycle, outbox, retention and v1 mailboxes:
 
-- [checkpoint-01-native-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-01-native-lifecycle)
-- [checkpoint-02-native-outbox](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-02-native-outbox)
-- [checkpoint-03-native-retention](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-03-native-retention)
-- [checkpoint-04-version1-mailboxes](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-04-version1-mailboxes)
-- [checkpoint-05-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-05-spawned-host-trace)
-- [checkpoint-06-terminal-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-06-terminal-spawned-host-trace)
-- [checkpoint-07-complete-host-contract](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/execution-checkpoint/checkpoint-07-complete-host-contract)
+- [checkpoint-01-native-lifecycle](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/execution-checkpoint/checkpoint-01-native-lifecycle)
+- [checkpoint-02-native-outbox](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/execution-checkpoint/checkpoint-02-native-outbox)
+- [checkpoint-03-native-retention](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/execution-checkpoint/checkpoint-03-native-retention)
+- [checkpoint-04-version1-mailboxes](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/execution-checkpoint/checkpoint-04-version1-mailboxes)
+- [checkpoint-05-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/execution-checkpoint/checkpoint-05-spawned-host-trace)
+- [checkpoint-06-terminal-spawned-host-trace](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/execution-checkpoint/checkpoint-06-terminal-spawned-host-trace)
+- [checkpoint-07-complete-host-contract](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/execution-checkpoint/checkpoint-07-complete-host-contract)

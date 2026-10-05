@@ -114,7 +114,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "efaed0a21409f75ed55f159a6f8c833f3b62e88c" }
+determa-state = { git = "https://github.com/fruwehq/determa-state-rust", rev = "272e37e7255ae4c650f714a94ea6cddea61d245d" }
 serde_json = "1"
 serde_json_canonicalizer = "0.3"
 sha2 = "0.10"
@@ -204,5 +204,5 @@ profile tests exact inspection and optional semantic capability negotiation.
 
 [§6.7 automatic deferral](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#67-automatic-deferral)
 and [§12 inspection and visualization](https://github.com/fruwehq/determa-state-spec/blob/86bb88dd21cb1f799eefe5020b6e49dabf6e7225/SPEC.md#12-inspection-and-visualization)
-are authoritative. See the pinned [117 mailbox case](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/core/117-version1-mailboxes)
-and [introspection profile](https://github.com/fruwehq/determa-state-conformance/tree/7f09321fb483a22eb677a4342f8d9537a7a18e82/conformance/profiles/introspection).
+are authoritative. See the pinned [117 mailbox case](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/core/117-version1-mailboxes)
+and [introspection profile](https://github.com/fruwehq/determa-state-conformance/tree/affe3fe3bcc4d13fa7c5374471568e94af36f0d1/conformance/profiles/introspection).
