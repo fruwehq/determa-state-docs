@@ -20,9 +20,10 @@ def reviewed_inputs(root: Path) -> dict[str, str]:
             "sources.lock.yaml",
             "STATE_VERSION",
             "coverage.yaml",
+            "PUBLICATION_MANIFEST.md",
         )
     ]
-    for directory in (".github/workflows", "docs", "scripts", "tests"):
+    for directory in (".github/workflows", "docs", "scripts", "tests", "audit"):
         files.extend(
             path for path in (root / directory).rglob("*")
             if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"

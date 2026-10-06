@@ -11,6 +11,29 @@ capabilities. Registration identifies a provider; operational verification must 
 prove the configured instance, source closure, health and transaction boundary. A
 provider name or a Boolean claim cannot establish those facts.
 
+## Application choices and candidate acceptance
+
+These profiles are optional for an application: select the host boundaries your
+application needs. The approved 0.3.0 implementation plan requires concrete providers
+in both engines and executable evidence for each promised boundary. Schemas,
+conditional vectors and a provider descriptor alone do not satisfy that plan.
+Publication remains held in the [reopened scope audit](https://github.com/fruwehq/determa-state-examples/issues/21).
+
+Python and Rust now both execute the seven native inspection vectors and all 52
+runtime-provider vectors through reviewed production operations. Rust's native-effect
+journal, complete local authority profile and the synchronized archive, timer and
+recovery implementations are still under development. Python's timer draft includes
+actual coordinated admission, strictly local native-fate reclaim and process-kill
+restart tests; verified installation, archive/recovery/authority composition and the
+full operational profile are unfinished. Those draft tests
+prove their stated transaction cuts, not the entire recovery or relocation contract.
+
+The [publication manifest](https://github.com/fruwehq/determa-state-docs/blob/fruwe/publication-manifest-v030/PUBLICATION_MANIFEST.md)
+records interim package inventories, source identities and remaining approval evidence.
+Use the exact reviewed checkpoint and its scope when assessing a capability. Final
+manual pins and examples will be refreshed after the implementations pass their
+complete operational gates and independent reviews.
+
 ## Select only the capabilities you can prove
 
 A host resolves an exact provider reference and configuration, then verifies its
@@ -28,7 +51,7 @@ do not establish distributed coordination or exactly-once external delivery.
 
 ## Scope authority and worker fencing
 
-The local authority implementation stores epochs, generations, guarded writes, worker
+Python's local authority implementation stores epochs, generations, guarded writes, worker
 claims and inventory evidence in the same tested SQLite boundary as the checkpoint.
 A guarded commit checks the current authority and worker fence again at commit.
 Freezing stops new authorized work; retirement and destination activation require
@@ -94,7 +117,7 @@ all observable decisions; ignoring any of them prevents a lossless claim. An
 unhandled machine input differs from a malformed ingress item. Outbox retention and
 idempotent destinations govern external delivery independently of machine handling.
 
-## Archives, timers and recovery remain conditional
+## Archives, timers and recovery require concrete providers
 
 An archive is a consistent snapshot of explicitly selected root checkpoints and their
 complete declared participant closure. It retains queues, receipts, tombstones,
