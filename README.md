@@ -44,6 +44,29 @@ MkDocs build.
 
 Use `make serve` to preview the site locally.
 
+## What the scripts do
+
+The scripts maintain this manual and check its runnable examples. They are not
+part of the Determa State engine and do not install timers, HTTP endpoints,
+archive exporters, or recovery providers.
+
+| Script | Purpose | Side effects |
+|---|---|---|
+| [`fetch_sources.py`](scripts/fetch_sources.py) | Fetch the four public repositories at the exact commits in `sources.lock.yaml`; verify checkout identity and cleanliness. | Network reads and local source checkouts. |
+| [`source_lock.py`](scripts/source_lock.py) | Read and validate the source-lock metadata. | Reads local files; used by the other scripts. |
+| [`install_candidate.py`](scripts/install_candidate.py) | Install the pinned unreleased Python engine and its dependencies for tutorial validation. | Network reads; replaces the engine installation in the Python environment running the command. Use a dedicated virtual environment. |
+| [`validate.py`](scripts/validate.py) | Check versions, coverage and links; extract named Markdown fences; validate their syntax/schema; run Python and Rust traces and persistence checks. | Temporary files, local builds and subprocess execution; Cargo may fetch dependencies. `--extract-only` writes `.cache/examples`. |
+| [`check_latest.py`](scripts/check_latest.py) | Check public commit identities and that planned coverage issues remain open. For released locks, also check tag identity and latest published versions. | Read-only GitHub API requests. Candidate mode does not require a published 0.3.0 tag. |
+| [`publication_hold_bootstrap.py`](scripts/publication_hold_bootstrap.py) | Compare documentation and validation inputs with the local hash inventory before CI installs dependencies or runs Make. | Reads local files. |
+| [`check_publication_hold.py`](scripts/check_publication_hold.py) | Check that hash inventory and the expected validation-only workflow/Make recipe. | Reads local files. |
+
+The publication-hold checks make changes visible; their hashes do not establish
+independent review or release readiness. They currently include authored chapters,
+so an intended chapter edit also requires refreshing `publication-hold-inputs.json`.
+The documentation workflow has read-only repository permissions and no deployment
+step. `make check` builds the site locally; none of these scripts publishes it or
+publishes engine packages.
+
 ## Status
 
 The 0.3.0 tutorial migration is in progress in [#28](https://github.com/fruwehq/determa-state-docs/issues/28).
