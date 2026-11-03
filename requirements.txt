@@ -2,5 +2,5 @@ jsonschema==4.26.0
 markdown-it-py==4.2.0
 mkdocs==1.6.1
 mkdocs-material==9.7.7
-pytest==9.1.1
+pytest==9.2.0
 ruamel.yaml==0.19.1
